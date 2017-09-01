@@ -61,7 +61,7 @@ exports.test = function () {
       transparent: true, 
       frame: false,
       width: 320,
-      height: 72,
+      height: 96,
       resizable: false,
       alwaysOnTop:true,
       x: size.width - mainWindowSize.width - 320,
