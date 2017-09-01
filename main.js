@@ -3,26 +3,43 @@ const electron = require('electron');
 const {app} = electron;
 const {BrowserWindow} = electron; //ウィンドウを表す[BrowserWindow]はelectronモジュールに含まれている
 
+let Screen;
+let size;// ディスプレイのサイズを取得する
 // 新しいウィンドウ(Webページ)を生成
-let win;
+let mainWindow;
+let subwindow;
+let mainWindowSize;
+
+var state = 0;
+
 function createWindow() {
+  var nativeImage = electron.nativeImage;
+  var image = nativeImage.createFromPath('img/default.png');
+  var imagesize = image.getSize();
+  mainWindowSize = imagesize;
+  Screen = electron.screen;
+  size = Screen.getPrimaryDisplay().size;
   // BrowserWindowインスタンスを生成
-  win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
      transparent: true , 
-     width: 245,
-     height: 170 , 
+     width: imagesize.width,
+     height: imagesize.height, 
      frame: false,
      resizable: false,
      alwaysOnTop:true,
+     useContentSize: true,
+     x:size.width - imagesize.width,
+     y:size.height - imagesize.height - 40
     });
   // index.htmlを表示
-  win.loadURL(`file://${__dirname}/index.html`);
+  mainWindow.loadURL(`file://${__dirname}/index.html`);
   // デバッグするためのDevToolsを表示
-  //win.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
   // ウィンドウを閉じたら参照を破棄
-  win.on('closed', () => {   // ()は　function ()と書いていい
-    win = null;
+  mainWindow.on('closed', () => {   // ()は　function ()と書いていい
+    mainWindow = null;
   });
+
 }
 // アプリの準備が整ったらウィンドウを表示
 app.on('ready', createWindow);
@@ -37,3 +54,24 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+exports.test = function () {
+  if ( state == 0 ){
+    subwindow = new BrowserWindow({
+      transparent: true, 
+      frame: false,
+      width: 320,
+      height: 96,
+      resizable: false,
+      alwaysOnTop:true,
+      x: size.width - mainWindowSize.width - 320,
+      y: size.height - mainWindowSize.height 
+    });
+    subwindow.loadURL(`file://${__dirname}/input.html`)
+    subwindow.on('closed', () => {   // ()は　function ()と書いていい
+      state = 0;
+      subwindow = null;
+    });
+    state = 1;
+  }
+};
