@@ -8,6 +8,7 @@ let size;// ディスプレイのサイズを取得する
 // 新しいウィンドウ(Webページ)を生成
 let mainWindow;
 let subwindow;
+let mainWindowSize;
 
 var state = 0;
 
@@ -15,7 +16,7 @@ function createWindow() {
   var nativeImage = electron.nativeImage;
   var image = nativeImage.createFromPath('img/default.png');
   var imagesize = image.getSize();
-
+  mainWindowSize = imagesize;
   Screen = electron.screen;
   size = Screen.getPrimaryDisplay().size;
   // BrowserWindowインスタンスを生成
@@ -60,11 +61,11 @@ exports.test = function () {
       transparent: true, 
       frame: false,
       width: 320,
-      height: 64,
+      height: 72,
       resizable: false,
       alwaysOnTop:true,
-      x: size.width - 300 - 320,
-      y: size.height - 96 - 40
+      x: size.width - mainWindowSize.width - 320,
+      y: size.height - mainWindowSize.height 
     });
     subwindow.loadURL(`file://${__dirname}/input.html`)
     subwindow.on('closed', () => {   // ()は　function ()と書いていい

@@ -43,7 +43,7 @@
             $("#result").show();
             delayText( 
                $( "#result" ) ,
-                "ふふ、そうなのね。えらい、えらい！" ,
+                "ふふ、「" + $("#inputTask").val() + "」のね。\nそうなんだぁ。えらい、えらい！" ,
                60 ,
                function(){
                  setTimeout(
@@ -51,7 +51,7 @@
                     var window = remote.getCurrentWindow();
                      window.close();
                    },
-                   1400
+                   1800
                  );
                } 
             );
@@ -64,7 +64,7 @@
         var count = 0;
         var countText = function(){
           var timer = setTimeout( countText , delay );
-          obj.append(text[count]);
+          obj.append(text[count].replace(/\n/, "<br>"));
           count++;
           if ( count == text.length ){
             clearTimeout( timer );
