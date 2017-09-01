@@ -2,20 +2,37 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>管理管理管理されたい</title>
+    <title>褒めて褒めて褒められていたい！</title>
     <style>
+    html {
+        margin: 0px;
+      }
       body {
+        margin: 0px;
         background-color: rgba(0, 0, 0, 0);
         color: #fff;
+        user-select: none;
         -webkit-app-region: drag;
-        -webkit-user-select: none;
+        font-size:14px;
       }
       body::-webkit-scrollbar{
         display: none;
+      } 
+      img{
+        -webkit-app-region: no-drag;
       }
     </style>
+    <script type="text/javascript">
+      // node_integrationを行うとmodule.exports関係の事情でjQuery/$がundefinedになるので
+      // それの回避コード
+      window.jQuery = window.$ = require('./js/jquery-3.2.1.min.js');   
+    </script>
+    <script src="./js/jquery-3.2.1.min.js"></script>
+    <script src="./js/index.js"></script>
   </head>
   <body>
-    <img src="img/defailt.png">
+    <div>
+      <img id="call" src="img/default.png">
+    </div>
   </body>
 </html>
