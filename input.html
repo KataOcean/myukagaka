@@ -1,90 +1,39 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="UTF-8">
     <title>input</title>
     <style>
-      body {
-        background-color: rgba(0, 0, 0, 0.7 );
-        color: white;
-      }
-      body::-webkit-scrollbar{
-        display: none;
-      }
-      input {
-        -webkit-app-region: no-drag;
-      }   
+        body {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            user-select: none;
+            -webkit-app-region: drag;
+        }
+        
+        body::-webkit-scrollbar {
+            display: none;
+        }
+        
+        input {
+            -webkit-app-region: no-drag;
+        }
     </style>
     <script type="text/javascript">
-      // node_integrationを行うとmodule.exports関係の事情でjQuery/$がundefinedになるので
-      // それの回避コード
-      window.jQuery = window.$ = require('./js/jquery-3.2.1.min.js');   
+        window.jQuery = window.$ = require('./js/jquery-3.2.1.min.js');
     </script>
     <script src="./js/jquery-3.2.1.min.js"></script>
-    <script>
-      const remote = require('electron').remote;
-      $(function(){
-        var text = $( "#display" ).text();
-        var delay = 60;
-        $("#inputTask").hide();
-        $("#result").hide();
-        delayText( 
-          $( "#display" ) ,
-          "おつかれさま。\n今日は、何をしたの？" ,
-          60 ,
-          function(){
-            $("#inputTask").show();
-            $("#inputTask").focus();
-          } 
-        );
-        $( '#inputTask' ).keypress( function ( e ) {
-	        if ( e.which == 13 ) {
-	        $("#input").hide();
-            $("#result").show();
-            delayText( 
-               $( "#result" ) ,
-                "ふふ、「" + $("#inputTask").val() + "」のね。\nそうなんだぁ。えらい、えらい！" ,
-               60 ,
-               function(){
-                 setTimeout(
-                   function(){
-                    var window = remote.getCurrentWindow();
-                     window.close();
-                   },
-                   1800
-                 );
-               } 
-            );
-	        return false;
-	        }
-        } );
-      });
-      function delayText( obj , text , delay , callback ){
-        obj.text( "" );
-        var count = 0;
-        var countText = function(){
-          var timer = setTimeout( countText , delay );
-          obj.append(text[count].replace(/\n/, "<br>"));
-          count++;
-          if ( count == text.length ){
-            clearTimeout( timer );
-            callback();
-          }
-        }
-        countText();
-      }
-    </script>
+    <script src="./js/common.js"></script>
+    <script src="./js/input.js"></script>
     <script src="./js/bootstrap.min.js"></script>
-  </head>
-  <body>
-    <div class="container">
-      <div class="input-group" id="input">
-        <span id="display"><label></lable></span>
-        <input type="text" id="inputTask" class="textCss" placeholder="起床した">
-      </div>
-      <div class="row" id="result">
-        <span id="display"></span>
-      </div>
+</head>
+
+<body>
+    <div class="input-group">
+        <label>あなた:</label>
+        <input type="text" id="userInput" placeholder="起床した" style="width:100%">
     </div>
-  </body>
+</body>
+
 </html>

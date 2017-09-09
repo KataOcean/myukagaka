@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>input</title>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            -webkit-app-region: drag;
+            user-select: none;
+        }
+        
+        body::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <script type="text/javascript">
+        // node_integrationを行うとmodule.exports関係の事情でjQuery/$がundefinedになるので
+        // それの回避コード
+        window.jQuery = window.$ = require('./js/jquery-3.2.1.min.js');
+    </script>
+    <script src="./js/jquery-3.2.1.min.js"></script>
+    <script src="./js/common.js"></script>
+    <script src="./js/balloon.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <span id="display"><label></lable></span>
+    </div>
+</body>
+
+</html>
