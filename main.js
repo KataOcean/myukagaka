@@ -63,8 +63,6 @@ var saying = false;
 var canSaying = true;
 var isEnd = false;
 
-var parseRules = [];
-
 function createWindow() {
     var nativeImage = electron.nativeImage;
     var image = nativeImage.createFromPath('img/default.png');
@@ -212,46 +210,52 @@ function reply(text) {
 
     replying = true;
 
-    var obj = {};
-    var arg;
-    for (let i in parseRules) {
-        var reg;
-        var rule = parseRules[i];
-        var regexp = new RegExp(rule.reg);
-        if (reg = text.match(regexp)) {
-            obj = {
-                func: rule.func,
-                arg: rule.arg.map(function(val) {
-                    return reg[val];
-                }),
-            }
-            break;
-        }
-    }
+    readData((rules) => {
 
-    var rep = "";
-    var data = {
-        db: db,
-        user: user,
-        arg: obj.arg,
-        startup: startup,
-        store: store
-    }
-    loadReply(obj.func, (func) => {
-        func(data, function(rep, data) {
-            if (data) {
-                if (data.isEnd) isEnd = true;
-                if (data.user) user = data.user;
+        var obj = {};
+        var arg;
+        for (let i in rules) {
+            var reg;
+            var rule = rules[i];
+            var regexp = new RegExp(rule.reg);
+            if (reg = text.match(regexp)) {
+                obj = {
+                    func: rule.func,
+                    arg: rule.arg.map(function(val) {
+                        return reg[val];
+                    }),
+                }
+                break;
             }
-            //ここでパースする
+        }
+
+        var rep = "";
+        var data = {
+            db: db,
+            user: user,
+            arg: obj.arg,
+            startup: startup,
+            store: store
+        }
+
+        if (obj.func) {
+            loadReply(obj.func, (func) => {
+                func(data, function(rep, data) {
+                    if (data) {
+                        if (data.isEnd) isEnd = true;
+                        if (data.user) user = data.user;
+                    }
+                    //ここでパースする
+                    say(rep);
+                });
+            });
+        } else {
+            rep = "ふふっ、呼んでみただけ？";
             say(rep);
-        });
+        }
+
     });
 
-    if (obj) {} else {
-        rep = "ふふっ、呼んでみただけ？";
-        say(rep);
-    }
 }
 
 function call() {
@@ -274,10 +278,10 @@ function waitInput() {
 }
 
 function readData(callback) {
-    fs.readFile("./data/parse.txt", "utf8", function(err, data) {
+    fs.readFile("./data/default/parse.txt", "utf8", function(err, data) {
         if (err) return console.log(err);
         var buf = data.split('\r\n');
-
+        var parseRules = [];
         for (let i in buf) {
             var rule = buf[i].trim().split(' ');
             parseRules.push({
@@ -287,7 +291,7 @@ function readData(callback) {
             });
         }
 
-        callback();
+        callback(parseRules);
     });
 
 }
