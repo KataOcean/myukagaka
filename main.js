@@ -1,9 +1,28 @@
 // electronモジュールを読み込み
 const electron = require('electron');
+const Datastore = require('nedb');
 const Store = require('electron-store');
 const { app } = electron;
 const { BrowserWindow } = electron; //ウィンドウを表す[BrowserWindow]はelectronモジュールに含まれている
 const ipcMain = electron.ipcMain;
+const date = new Date();
+const startup = new Date(date.getTime());
+const vm = require('vm');
+
+var fs = require('fs');
+
+var db = {};
+db.project = new Datastore({
+    filename: './db/project.db',
+    autoload: true,
+    timestampData: true
+});
+db.progress = new Datastore({
+    filename: './db/progress.db',
+    autoload: true,
+    timestampData: true
+});
+
 const store = new Store({
     defaults: {
         character: {
@@ -13,8 +32,19 @@ const store = new Store({
             nickname: "あなた",
         },
         mainWindow: {},
-        balloonWindow: {},
-        inputWindow: {},
+        balloonWindow: {
+            bounds: {
+                width: 360,
+                height: 96
+            },
+        },
+        inputWindow: {
+            bounds: {
+                width: 360,
+                height: 64
+            }
+
+        },
     },
 });
 
@@ -28,11 +58,12 @@ let inputWindow;
 let balloonWindow;
 
 var state = 100;
-var Datastore = require('nedb');
 
 var saying = false;
-var isBegin = true;
+var canSaying = true;
 var isEnd = false;
+
+var parseRules = [];
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
@@ -69,16 +100,26 @@ function createWindow() {
         if (balloonWindow) balloonWindow.close();
     });
 
-    CreateInputWindow();
-    CreateBalloonWindow();
+    mainWindow.on('focus', () => {
+        call();
+    });
 
+    mainWindow.webContents.on('did-finish-load', () => {});
+    CreateBalloonWindow();
+    CreateInputWindow();
+
+    inputWindow.webContents.on('did-finish-load', () => {
+        inputWindow.focus();
+    });
     balloonWindow.webContents.on('did-finish-load', () => {
         say("おはよう、" + user.nickname + "！\n今日も一日、頑張ろうね！");
     });
 
 }
 // アプリの準備が整ったらウィンドウを表示
-app.on('ready', createWindow);
+app.on('ready', () => {
+    readData(createWindow);
+});
 // 全てのウィンドウを閉じたらアプリを終了
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -93,70 +134,29 @@ app.on('activate', () => {
 
 // 同期メッセージの受信
 ipcMain.on('said', (event) => {
-    console.log("pong");
+    console.log("said");
     // レンダラープロセスへ返信
     event.sender.send('reply');
     saying = false;
-    if (isBegin) {
-        state = 0;
-        isBegin = false;
-    }
     if (isEnd) {
         mainWindow.close();
     }
-    if (state == 2) state = 0;
 });
 
-exports.test = function() {
-    inputWindow.focus();
-    balloonWindow.focus();
-    if (state == 0) {
-        if (!inputWindow) CreateInputWindow();
-        moveInputWindow();
-        inputWindow.show();
-        inputWindow.webContents.send("clicked");
-
-        say("あ、" + user.nickname + "。おつかれさま。\nどうかした？");
-        state = 1;
-    }
-};
-
-exports.setMainWindowPosition = function(x, y) {
-    mainWindow.setPosition(x, y);
-    store.set({
-        mainWindow: {
-            x: x,
-            y: y
-        }
-    });
-    moveInputWindow();
-}
-
-exports.send = function(txt) {
-    if (state == 1) {
-        inputWindow.hide();
-        var msg = getReply(txt);
-        balloonWindow.show();
-        balloonWindow.webContents.send('say', msg);
-        state = 2;
-    }
-};
-
-exports.store = store;
-
 function CreateInputWindow() {
-    var bounds = mainWindow.getBounds();
+    var mb = mainWindow.getBounds();
+    var bounds = store.get('inputWindow.bounds');
     inputWindow = new BrowserWindow({
         transparent: true,
         frame: false,
-        width: 360,
-        height: 64,
-        resizable: false,
-        alwaysOnTop: false,
-        x: 0, //bounds.x - 240,
-        y: 0, //bounds.y + bounds.height - 32,
+        width: bounds.width,
+        height: bounds.height,
+        resizable: true,
+        alwaysOnTop: true,
+        x: bounds.x ? bounds.x : mb.x - bounds.width,
+        y: bounds.y ? bounds.y : mb.y + mb.height - bounds.height,
         useContentSize: true,
-        show: false,
+        show: true,
         skipTaskbar: true
     });
     inputWindow.loadURL(`file://${__dirname}/input.html`)
@@ -164,40 +164,30 @@ function CreateInputWindow() {
         state = 0;
         inputWindow = null;
     });
-
-    ['move'].forEach(ev => {
+    //inputWindow.openDevTools(true);
+    ['resize', 'move'].forEach(ev => {
         inputWindow.on(ev, () => {
             store.set("inputWindow", {
-                x: inputWindow.getBounds().x,
-                y: inputWindow.getBounds().y
+                bounds: inputWindow.getBounds(),
             });
         })
     });
 }
 
-function moveInputWindow() {
-    var bounds_MainWindow = mainWindow.getBounds();
-    var bounds = inputWindow.getBounds();
-    var pos = store.get('inputWindow')
-    var x = (pos.x) ? pos.x : bounds_MainWindow.x - inputWindow.getBounds().width,
-        y = (pos.y) ? pos.y : bounds_MainWindow.y + bounds_MainWindow.height - inputWindow.getBounds().height;
-
-    inputWindow.setPosition(x, y);
-}
-
 function CreateBalloonWindow() {
-    var bounds = mainWindow.getBounds();
+    var mb = mainWindow.getBounds();
+    var bounds = store.get('balloonWindow.bounds');
     balloonWindow = new BrowserWindow({
         transparent: true,
         frame: false,
-        width: 360,
-        height: 96,
-        resizable: false,
+        width: bounds.width,
+        height: bounds.height,
+        resizable: true,
         alwaysOnTop: false,
-        x: bounds.x - 360,
-        y: bounds.y,
+        x: bounds.x ? bounds.x : mb.x - bounds.width,
+        y: bounds.y ? bounds.y : mb.y,
         useContentSize: true,
-        show: false,
+        show: true,
         skipTaskbar: true
     });
     balloonWindow.loadURL(`file://${__dirname}/balloon.html`)
@@ -209,86 +199,129 @@ function CreateBalloonWindow() {
         balloonWindow = null;
     });
 
-    ['move'].forEach(ev => {
+    ['resize', 'move'].forEach(ev => {
         balloonWindow.on(ev, () => {
             store.set("balloonWindow", {
-                x: balloonWindow.getBounds().x,
-                y: balloonWindow.getBounds().y
+                bounds: balloonWindow.getBounds(),
             });
         })
     });
 }
 
-function moveBalloonWindow() {
-    var bounds_MainWindow = mainWindow.getBounds();
-    var bounds = balloonWindow.getBounds();
-    var pos = store.get('balloonWindow')
-    var x = (pos.x) ? pos.x : bounds_MainWindow.x - balloonWindow.getBounds().width,
-        y = (pos.y) ? pos.y : bounds_MainWindow.y + bounds_MainWindow.height - balloonWindow.getBounds().height;
+function reply(text) {
 
-    balloonWindow.setPosition(x, y);
+    replying = true;
+
+    var obj = {};
+    var arg;
+    for (let i in parseRules) {
+        var reg;
+        var rule = parseRules[i];
+        var regexp = new RegExp(rule.reg);
+        if (reg = text.match(regexp)) {
+            obj = {
+                func: rule.func,
+                arg: rule.arg.map(function(val) {
+                    return reg[val];
+                }),
+            }
+            break;
+        }
+    }
+
+    var rep = "";
+    var data = {
+        db: db,
+        user: user,
+        arg: obj.arg,
+        startup: startup,
+        store: store
+    }
+    loadReply(obj.func, (func) => {
+        func(data, function(rep, data) {
+            if (data) {
+                if (data.isEnd) isEnd = true;
+                if (data.user) user = data.user;
+            }
+            //ここでパースする
+            say(rep);
+        });
+    });
+
+    if (obj) {} else {
+        rep = "ふふっ、呼んでみただけ？";
+        say(rep);
+    }
 }
 
-function getReply(text) {
-
-    var textArr = text.split('');
-    var currentText = "";
-    var isTask = false;
-
-    var type = "null";
-    var obj;
-
-    for (var i = 0; i < textArr.length; ++i) {
-
-        console.log(currentText);
-        if (textArr[i] == "を") {
-            if (text.substr(i, 3) == "をした") {
-                type = "reporttask";
-                obj = { name: currentText };
-                break;
-            }
-        } else if (textArr[i] == "お") {
-            if (text.substr(i, 4) == "おやすみ") {
-                type = "goodnight";
-                break;
-            }
-        } else if (textArr[i] == "っ") {
-            if (text.substr(i, 5) == "って呼んで") {
-                type = "changenickname";
-                obj = { oldname: user.nickname, name: currentText }
-                break;
-            }
-        }
-
-        currentText += textArr[i];
-
-    }
-    var rep = "";
-    if (type == "goodnight") {
-        isEnd = true;
-        rep = "あらあら、もうお休みかしら。\n……うん、今日はすごく頑張ったね、" + user.nickname + "。\nじゃあ……おやすみなさい。";
-    } else if (type == "reporttask") {
-        rep = "ふふ、「" + obj.name + "」したのね。\nそうなんだぁ。えらい、えらい！";
-    } else if (type == "changenickname") {
-        store.set({
-            user: {
-                nickname: obj.name
-            }
-        });
-        user = store.get('user');
-        rep = "分かったわ。\nじゃあ、これからは「" + obj.oldname + "」じゃなくて、\n「" + obj.name + "」って呼んであげる。\nこれからもよろしく、「" + obj.name + "」。";
-    } else {
-        rep = "ふふっ、呼んでみただけ？";
-    }
-
-    return rep;
+function call() {
+    if (!saying) say("あら、" + user.nickname + "。おつかれさま。\nどうかした？");
+    waitInput();
 }
 
 function say(msg) {
-    if (!saying) {
+    if (canSaying) {
         if (!balloonWindow) CreateBalloonWindow();
-        moveBalloonWindow();
+        balloonWindow.focus();
         balloonWindow.webContents.send('say', msg);
         saying = true;
     }
 }
+
+function waitInput() {
+    if (!inputWindow) CreateInputWindow();
+    inputWindow.focus();
+}
+
+function readData(callback) {
+    fs.readFile("./data/parse.txt", "utf8", function(err, data) {
+        if (err) return console.log(err);
+        var buf = data.split('\r\n');
+
+        for (let i in buf) {
+            var rule = buf[i].trim().split(' ');
+            parseRules.push({
+                reg: rule[0].replace(new RegExp('/', 'g'), ''),
+                func: rule[1],
+                arg: rule.slice(2),
+            });
+        }
+
+        callback();
+    });
+
+}
+
+function loadReply(rep, callback) {
+    var path = "./data/default/scripts/" + rep + ".js";
+    if (!fs.existsSync(path)) {
+        return;
+    }
+    var sandbox = {};
+    fs.readFile(path, function(err, data) {
+        var script = vm.createScript(data, path);
+        script.runInNewContext(sandbox);
+        obj = sandbox.exports;
+        callback(sandbox.exports);
+    });
+    //    fs.watchFile(file, load);
+}
+
+
+exports.setMainWindowPosition = function(x, y) {
+    mainWindow.setPosition(x, y);
+    store.set({
+        mainWindow: {
+            x: x,
+            y: y
+        }
+    });
+}
+
+exports.send = function(txt) {
+    reply(txt);
+    inputWindow.focus();
+};
+
+exports.store = store;
+exports.db = db;

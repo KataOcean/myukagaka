@@ -13,7 +13,6 @@ $(function() {
             state.down = true;
             state.mouseX = e.originalEvent.clientX;
             state.mouseY = e.originalEvent.clientY;
-
         }
     });
     img.mousemove(function(e) {
@@ -26,9 +25,6 @@ $(function() {
         }
     });
     img.mouseup(function(e) {
-        if (!state.dragging) {
-            call();
-        }
         state.down = false;
         state.dragging = false;
     });
@@ -42,7 +38,3 @@ $(function() {
 ipcRenderer.on('say', (msg) => {
     console.log(msg);
 });
-
-function call() {
-    main.test();
-}

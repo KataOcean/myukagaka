@@ -18,8 +18,12 @@
         
         input {
             -webkit-app-region: no-drag;
+            border: 0px;
+            background-color: rgba(0, 0, 0, 0);
+            color: white;
         }
     </style>
+
     <script type="text/javascript">
         window.jQuery = window.$ = require('./js/jquery-3.2.1.min.js');
     </script>
@@ -30,9 +34,11 @@
 </head>
 
 <body>
-    <div class="input-group">
-        <label>あなた:</label>
-        <input type="text" id="userInput" placeholder="起床した" style="width:100%">
+    <div class="input-group input-line">
+        <div>
+            > <span id="history"></span>
+        </div>
+        <input type="text" id="userInput" placeholder="起床した" style="width:100%" maxlength="50">
     </div>
 </body>
 
