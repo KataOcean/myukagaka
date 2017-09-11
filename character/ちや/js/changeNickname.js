@@ -1,8 +1,8 @@
-exports = function(data, callback) {
+exports = function(callback) {
 
     var rep = "";
 
-    newname = { oldname: data.user.nickname, name: data.arg[0] }
+    newname = { oldname: user.nickname, name: arg[0] }
 
     rep = "分かったわ。\nじゃあ、これからは「" + newname.oldname + "」じゃなくて、\n「" + newname.name + "」って呼ぶわね。\nこれからもよろしく、「" + newname.name + "」！";
     store.set({

@@ -65,7 +65,7 @@ var isEnd = false;
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
-    var image = nativeImage.createFromPath('img/default.png');
+    var image = nativeImage.createFromPath(getCharacterPath() + 'img/default.png');
     var imagesize = image.getSize();
     Screen = electron.screen;
     size = Screen.getPrimaryDisplay().size;
@@ -80,13 +80,14 @@ function createWindow() {
         width: imagesize.width,
         height: imagesize.height,
         frame: false,
-        resizable: false,
+        resizable: true,
         alwaysOnTop: true,
         useContentSize: true,
         x: x,
         y: y
     });
-    // index.htmlを表示
+
+    //index.htmlを表示
     mainWindow.loadURL(`file://${__dirname}/index.html`);
     // デバッグするためのDevToolsを表示
     //mainWindow.webContents.openDevTools();
@@ -235,12 +236,15 @@ function reply(text) {
             user: user,
             arg: obj.arg,
             startup: startup,
-            store: store
+            store: store,
+            fs: fs,
+            __characterDir: getCharacterPath(),
         }
 
         if (obj.func) {
-            loadReply(obj.func, (func) => {
-                func(data, function(rep, data) {
+            loadReply(obj.func, data, (func) => {
+                func(function(rep, data) {
+                    console.log(rep);
                     if (data) {
                         if (data.isEnd) isEnd = true;
                         if (data.user) user = data.user;
@@ -278,7 +282,7 @@ function waitInput() {
 }
 
 function readData(callback) {
-    fs.readFile("./data/default/parse.txt", "utf8", function(err, data) {
+    fs.readFile(getCharacterPath() + "parse.txt", "utf8", function(err, data) {
         if (err) return console.log(err);
         var buf = data.split('\r\n');
         var parseRules = [];
@@ -296,19 +300,21 @@ function readData(callback) {
 
 }
 
-function loadReply(rep, callback) {
-    var path = "./data/default/scripts/" + rep + ".js";
+function loadReply(func, sandbox, callback) {
+    var path = getCharacterPath() + "js/" + func + ".js";
     if (!fs.existsSync(path)) {
         return;
     }
-    var sandbox = {};
     fs.readFile(path, function(err, data) {
         var script = vm.createScript(data, path);
         script.runInNewContext(sandbox);
         obj = sandbox.exports;
         callback(sandbox.exports);
     });
-    //    fs.watchFile(file, load);
+}
+
+function getCharacterPath() {
+    return "./character/" + store.get('character').name + "/";
 }
 
 
@@ -329,3 +335,4 @@ exports.send = function(txt) {
 
 exports.store = store;
 exports.db = db;
+exports.getCharacterPath = getCharacterPath;
