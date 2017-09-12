@@ -121,7 +121,7 @@ function createWindow() {
     CreateBalloonWindow();
     CreateInputWindow();
     balloonWindow.webContents.on('did-finish-load', () => {
-        say("おはよう、" + user.nickname + "！\n今日も一日、頑張ろうね！");
+        generateSerif("general", ["wakeup"]);
     });
     inputWindow.webContents.on('did-finish-load', () => {
         inputWindow.focus();
@@ -166,7 +166,6 @@ ipcMain.on('resizeMainWindow', (event, arg) => {
     }
 
     if (newbounds.y + newbounds.height > size.height) newbounds.y = size.height - newbounds.height;
-
 
     if (!store.get('balloonWindow.bounds').x) balloonWindow.setPosition(newbounds.x - balloonWindow.getBounds().width, newbounds.y);
     if (!store.get('inputWindow.bounds').x) inputWindow.setPosition(newbounds.x - inputWindow.getBounds().width, newbounds.y + newbounds.height - inputWindow.getBounds().height);
@@ -269,43 +268,48 @@ function reply(text) {
 
         if (!obj.func) obj.func = "freeTalk";
 
-        var rep = "";
-        var data = {
-            db: db,
-            user: user,
-            arg: obj.arg,
-            startup: startup,
-            store: store,
-            fs: fs,
-            __characterDir: getCharacterPath(),
-
-            inputWindow: inputWindow,
-            balloonWindow: balloonWindow,
-
-            console: console
-
-        }
-
-        loadReply(obj.func, data, (func) => {
-            func(function(rep, data) {
-                console.log(rep);
-                if (data) {
-                    if (data.isEnd) isEnd = true;
-                    if (data.user) user = data.user;
-                }
-                //ここでパースする
-                rep = rep.replace(/<呼び名>/, user.nickname);
-
-                say(rep);
-            });
-        });
+        generateSerif(obj.func, obj.arg);
 
     });
 
 }
 
+function generateSerif(func, arg) {
+    var data = {
+        db: db,
+        user: user,
+        arg: arg,
+        startup: startup,
+        store: store,
+        fs: fs,
+        __characterDir: getCharacterPath(),
+
+        inputWindow: inputWindow,
+        balloonWindow: balloonWindow,
+
+        console: console
+
+    }
+
+    loadReply(func, data, (func) => {
+        func(function(rep, data) {
+            console.log(rep);
+            if (data) {
+                if (data.isEnd) isEnd = true;
+                if (data.user) user = data.user;
+            }
+            //ここでパースする
+            rep = rep.replace(/<呼び名>/, user.nickname);
+
+            say(rep);
+        });
+    });
+}
+
 function call() {
-    if (!saying) say("あら、" + user.nickname + "。おつかれさま。\nどうかした？");
+    if (!saying) {
+        generateSerif("general", ["call"]);
+    }
     waitInput();
 }
 
