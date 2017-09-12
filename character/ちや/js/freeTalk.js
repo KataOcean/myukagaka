@@ -13,9 +13,6 @@ exports = function(callback) {
         }
 
         rep = ary[Math.floor(Math.floor(Math.random() * ary.length))];
-
-        rep = rep.replace(/<呼び名>/, user.nickname);
-
         callback(rep);
     });
 

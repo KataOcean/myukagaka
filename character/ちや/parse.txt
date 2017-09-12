@@ -1,6 +1,6 @@
 /^「(.*)」の「(.*)」をした/ reportProgress 1 2
+/^「(.*)」で「(.*)」をした/ reportProgress 1 2
 /^「(.*)」をした/ reportProgress 1 
-
 /^おやすみ(なさい)?$/ goodNight
 /(.*)って呼んで$/ changeNickname 1
 /^(.*)/ freeTalk 1

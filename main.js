@@ -31,7 +31,12 @@ const store = new Store({
         user: {
             nickname: "あなた",
         },
-        mainWindow: {},
+        mainWindow: {
+            bounds: {
+                width: 0,
+                height: 0
+            }
+        },
         balloonWindow: {
             bounds: {
                 width: 360,
@@ -65,20 +70,20 @@ var isEnd = false;
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
-    var image = nativeImage.createFromPath(getCharacterPath() + 'img/default.png');
-    var imagesize = image.getSize();
+
     Screen = electron.screen;
     size = Screen.getPrimaryDisplay().size;
 
-    var pos = store.get('mainWindow');
-    var x = (pos.x) ? pos.x : size.width - imagesize.width,
-        y = (pos.y) ? pos.y : size.height - imagesize.height - 40;
+    var bounds = store.get('mainWindow.bounds');
+
+    var x = (bounds.x) ? bounds.x : size.width,
+        y = (bounds.y) ? bounds.y : size.height;
 
     // BrowserWindowインスタンスを生成
     mainWindow = new BrowserWindow({
         transparent: true,
-        width: imagesize.width,
-        height: imagesize.height,
+        width: bounds.width,
+        height: bounds.height,
         frame: false,
         resizable: false,
         alwaysOnTop: true,
@@ -90,7 +95,7 @@ function createWindow() {
     //index.htmlを表示
     mainWindow.loadURL(`file://${__dirname}/index.html`);
     // デバッグするためのDevToolsを表示
-    //mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     // ウィンドウを閉じたら参照を破棄
     mainWindow.on('closed', () => { // ()は　function ()と書いていい
@@ -103,22 +108,28 @@ function createWindow() {
         call();
     });
 
+    ['resize', 'move'].forEach(ev => {
+        mainWindow.on(ev, () => {
+            store.set("mainWindow", {
+                bounds: mainWindow.getBounds(),
+            });
+        })
+    });
+
     mainWindow.webContents.on('did-finish-load', () => {});
+
     CreateBalloonWindow();
     CreateInputWindow();
-
-    inputWindow.webContents.on('did-finish-load', () => {
-        inputWindow.focus();
-    });
     balloonWindow.webContents.on('did-finish-load', () => {
         say("おはよう、" + user.nickname + "！\n今日も一日、頑張ろうね！");
     });
-
+    inputWindow.webContents.on('did-finish-load', () => {
+        inputWindow.focus();
+    });
 }
 // アプリの準備が整ったらウィンドウを表示
-app.on('ready', () => {
-    readData(createWindow);
-});
+app.on('ready', createWindow);
+
 // 全てのウィンドウを閉じたらアプリを終了
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -142,14 +153,30 @@ ipcMain.on('said', (event) => {
 });
 
 ipcMain.on('resizeMainWindow', (event, arg) => {
-    console.log(arg);
-    mainWindow.setSize(Math.floor(arg.width), Math.floor(arg.height), true);
-    // レンダラープロセスへ返信
-    event.sender.send('reply');
-    saying = false;
-    if (isEnd) {
-        mainWindow.close();
+    var bounds = store.get('mainWindow.bounds');
+    var newbounds = {
+        x: (bounds.x) ? bounds.x : size.width,
+        y: (bounds.y) ? bounds.y : size.height,
+        width: arg.width,
+        height: arg.height
     }
+
+    if (newbounds.x + newbounds.width > size.width) {
+        newbounds.x = size.width - newbounds.width;
+    }
+
+    if (newbounds.y + newbounds.height > size.height) newbounds.y = size.height - newbounds.height;
+
+
+    if (!store.get('balloonWindow.bounds').x) balloonWindow.setPosition(newbounds.x - balloonWindow.getBounds().width, newbounds.y);
+    if (!store.get('inputWindow.bounds').x) inputWindow.setPosition(newbounds.x - inputWindow.getBounds().width, newbounds.y + newbounds.height - inputWindow.getBounds().height);
+
+    mainWindow.setBounds(newbounds);
+
+    store.set('mainWindow', {
+        bounds: newbounds
+    });
+
 });
 
 function CreateInputWindow() {
@@ -267,6 +294,8 @@ function reply(text) {
                     if (data.user) user = data.user;
                 }
                 //ここでパースする
+                rep = rep.replace(/<呼び名>/, user.nickname);
+
                 say(rep);
             });
         });
