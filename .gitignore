@@ -58,7 +58,7 @@ typings/
 .env
 
 # add
-character/
+character/*/img/
 build/
 db/
 肯定ちゃん-win32-ia32/
