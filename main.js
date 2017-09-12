@@ -80,7 +80,7 @@ function createWindow() {
         width: imagesize.width,
         height: imagesize.height,
         frame: false,
-        resizable: true,
+        resizable: false,
         alwaysOnTop: true,
         useContentSize: true,
         x: x,
@@ -133,7 +133,17 @@ app.on('activate', () => {
 
 // 同期メッセージの受信
 ipcMain.on('said', (event) => {
-    console.log("said");
+    // レンダラープロセスへ返信
+    event.sender.send('reply');
+    saying = false;
+    if (isEnd) {
+        mainWindow.close();
+    }
+});
+
+ipcMain.on('resizeMainWindow', (event, arg) => {
+    console.log(arg);
+    mainWindow.setSize(Math.floor(arg.width), Math.floor(arg.height), true);
     // レンダラープロセスへ返信
     event.sender.send('reply');
     saying = false;
@@ -230,6 +240,8 @@ function reply(text) {
             }
         }
 
+        if (!obj.func) obj.func = "freeTalk";
+
         var rep = "";
         var data = {
             db: db,
@@ -239,24 +251,25 @@ function reply(text) {
             store: store,
             fs: fs,
             __characterDir: getCharacterPath(),
+
+            inputWindow: inputWindow,
+            balloonWindow: balloonWindow,
+
+            console: console
+
         }
 
-        if (obj.func) {
-            loadReply(obj.func, data, (func) => {
-                func(function(rep, data) {
-                    console.log(rep);
-                    if (data) {
-                        if (data.isEnd) isEnd = true;
-                        if (data.user) user = data.user;
-                    }
-                    //ここでパースする
-                    say(rep);
-                });
+        loadReply(obj.func, data, (func) => {
+            func(function(rep, data) {
+                console.log(rep);
+                if (data) {
+                    if (data.isEnd) isEnd = true;
+                    if (data.user) user = data.user;
+                }
+                //ここでパースする
+                say(rep);
             });
-        } else {
-            rep = "ふふっ、呼んでみただけ？";
-            say(rep);
-        }
+        });
 
     });
 
@@ -316,7 +329,6 @@ function loadReply(func, sandbox, callback) {
 function getCharacterPath() {
     return "./character/" + store.get('character').name + "/";
 }
-
 
 exports.setMainWindowPosition = function(x, y) {
     mainWindow.setPosition(x, y);

@@ -1,6 +1,7 @@
 exports = function(callback) {
 
     var rep = "";
+    inputWindow.hide();
     fs.readFile(__characterDir + "serifs/goodNight.txt", 'utf8', function(err, serifs) {
         if (db) {
 

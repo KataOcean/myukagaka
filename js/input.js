@@ -47,10 +47,6 @@ $(function() {
     });
 });
 
-function changeInput(e) {
-
-}
-
 ipcRenderer.on('focus', () => {
     //    var window = remote.getCurrentWindow();
     //    window.focus();
