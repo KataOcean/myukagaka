@@ -31,7 +31,12 @@ const store = new Store({
         user: {
             nickname: "あなた",
         },
-        mainWindow: {},
+        mainWindow: {
+            bounds: {
+                width: 0,
+                height: 0
+            }
+        },
         balloonWindow: {
             bounds: {
                 width: 360,
@@ -65,20 +70,20 @@ var isEnd = false;
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
-    var image = nativeImage.createFromPath('img/default.png');
-    var imagesize = image.getSize();
+
     Screen = electron.screen;
     size = Screen.getPrimaryDisplay().size;
 
-    var pos = store.get('mainWindow');
-    var x = (pos.x) ? pos.x : size.width - imagesize.width,
-        y = (pos.y) ? pos.y : size.height - imagesize.height - 40;
+    var bounds = store.get('mainWindow.bounds');
+
+    var x = (bounds.x) ? bounds.x : size.width,
+        y = (bounds.y) ? bounds.y : size.height;
 
     // BrowserWindowインスタンスを生成
     mainWindow = new BrowserWindow({
         transparent: true,
-        width: imagesize.width,
-        height: imagesize.height,
+        width: bounds.width,
+        height: bounds.height,
         frame: false,
         resizable: false,
         alwaysOnTop: true,
@@ -86,10 +91,11 @@ function createWindow() {
         x: x,
         y: y
     });
-    // index.htmlを表示
+
+    //index.htmlを表示
     mainWindow.loadURL(`file://${__dirname}/index.html`);
     // デバッグするためのDevToolsを表示
-    //mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     // ウィンドウを閉じたら参照を破棄
     mainWindow.on('closed', () => { // ()は　function ()と書いていい
@@ -102,22 +108,28 @@ function createWindow() {
         call();
     });
 
+    ['resize', 'move'].forEach(ev => {
+        mainWindow.on(ev, () => {
+            store.set("mainWindow", {
+                bounds: mainWindow.getBounds(),
+            });
+        })
+    });
+
     mainWindow.webContents.on('did-finish-load', () => {});
+
     CreateBalloonWindow();
     CreateInputWindow();
-
+    balloonWindow.webContents.on('did-finish-load', () => {
+        generateSerif("general", ["wakeup"]);
+    });
     inputWindow.webContents.on('did-finish-load', () => {
         inputWindow.focus();
     });
-    balloonWindow.webContents.on('did-finish-load', () => {
-        say("おはよう、" + user.nickname + "！\n今日も一日、頑張ろうね！");
-    });
-
 }
 // アプリの準備が整ったらウィンドウを表示
-app.on('ready', () => {
-    readData(createWindow);
-});
+app.on('ready', createWindow);
+
 // 全てのウィンドウを閉じたらアプリを終了
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -132,13 +144,38 @@ app.on('activate', () => {
 
 // 同期メッセージの受信
 ipcMain.on('said', (event) => {
-    console.log("said");
     // レンダラープロセスへ返信
     event.sender.send('reply');
     saying = false;
     if (isEnd) {
         mainWindow.close();
     }
+});
+
+ipcMain.on('resizeMainWindow', (event, arg) => {
+    var bounds = store.get('mainWindow.bounds');
+    var newbounds = {
+        x: (bounds.x) ? bounds.x : size.width,
+        y: (bounds.y) ? bounds.y : size.height,
+        width: arg.width,
+        height: arg.height
+    }
+
+    if (newbounds.x + newbounds.width > size.width) {
+        newbounds.x = size.width - newbounds.width;
+    }
+
+    if (newbounds.y + newbounds.height > size.height) newbounds.y = size.height - newbounds.height;
+
+    if (!store.get('balloonWindow.bounds').x) balloonWindow.setPosition(newbounds.x - balloonWindow.getBounds().width, newbounds.y);
+    if (!store.get('inputWindow.bounds').x) inputWindow.setPosition(newbounds.x - inputWindow.getBounds().width, newbounds.y + newbounds.height - inputWindow.getBounds().height);
+
+    mainWindow.setBounds(newbounds);
+
+    store.set('mainWindow', {
+        bounds: newbounds
+    });
+
 });
 
 function CreateInputWindow() {
@@ -229,37 +266,50 @@ function reply(text) {
             }
         }
 
-        var rep = "";
-        var data = {
-            db: db,
-            user: user,
-            arg: obj.arg,
-            startup: startup,
-            store: store
-        }
+        if (!obj.func) obj.func = "freeTalk";
 
-        if (obj.func) {
-            loadReply(obj.func, (func) => {
-                func(data, function(rep, data) {
-                    if (data) {
-                        if (data.isEnd) isEnd = true;
-                        if (data.user) user = data.user;
-                    }
-                    //ここでパースする
-                    say(rep);
-                });
-            });
-        } else {
-            rep = "ふふっ、呼んでみただけ？";
-            say(rep);
-        }
+        generateSerif(obj.func, obj.arg);
 
     });
 
 }
 
+function generateSerif(func, arg) {
+    var data = {
+        db: db,
+        user: user,
+        arg: arg,
+        startup: startup,
+        store: store,
+        fs: fs,
+        __characterDir: getCharacterPath(),
+
+        inputWindow: inputWindow,
+        balloonWindow: balloonWindow,
+
+        console: console
+
+    }
+
+    loadReply(func, data, (func) => {
+        func(function(rep, data) {
+            console.log(rep);
+            if (data) {
+                if (data.isEnd) isEnd = true;
+                if (data.user) user = data.user;
+            }
+            //ここでパースする
+            rep = rep.replace(/<呼び名>/, user.nickname);
+
+            say(rep);
+        });
+    });
+}
+
 function call() {
-    if (!saying) say("あら、" + user.nickname + "。おつかれさま。\nどうかした？");
+    if (!saying) {
+        generateSerif("general", ["call"]);
+    }
     waitInput();
 }
 
@@ -278,7 +328,7 @@ function waitInput() {
 }
 
 function readData(callback) {
-    fs.readFile("./data/default/parse.txt", "utf8", function(err, data) {
+    fs.readFile(getCharacterPath() + "parse.txt", "utf8", function(err, data) {
         if (err) return console.log(err);
         var buf = data.split('\r\n');
         var parseRules = [];
@@ -296,21 +346,22 @@ function readData(callback) {
 
 }
 
-function loadReply(rep, callback) {
-    var path = "./data/default/scripts/" + rep + ".js";
+function loadReply(func, sandbox, callback) {
+    var path = getCharacterPath() + "js/" + func + ".js";
     if (!fs.existsSync(path)) {
         return;
     }
-    var sandbox = {};
     fs.readFile(path, function(err, data) {
         var script = vm.createScript(data, path);
         script.runInNewContext(sandbox);
         obj = sandbox.exports;
         callback(sandbox.exports);
     });
-    //    fs.watchFile(file, load);
 }
 
+function getCharacterPath() {
+    return "./character/" + store.get('character').name + "/";
+}
 
 exports.setMainWindowPosition = function(x, y) {
     mainWindow.setPosition(x, y);
@@ -329,3 +380,4 @@ exports.send = function(txt) {
 
 exports.store = store;
 exports.db = db;
+exports.getCharacterPath = getCharacterPath;
