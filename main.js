@@ -1,6 +1,5 @@
 // electronモジュールを読み込み
 const electron = require('electron');
-const Datastore = require('nedb');
 const Store = require('electron-store');
 const { app } = electron;
 const { BrowserWindow } = electron; //ウィンドウを表す[BrowserWindow]はelectronモジュールに含まれている
@@ -10,18 +9,6 @@ const startup = new Date(date.getTime());
 const vm = require('vm');
 
 var fs = require('fs');
-
-var db = {};
-db.project = new Datastore({
-    filename: './db/project.db',
-    autoload: true,
-    timestampData: true
-});
-db.progress = new Datastore({
-    filename: './db/progress.db',
-    autoload: true,
-    timestampData: true
-});
 
 const store = new Store({
     defaults: {
@@ -281,10 +268,10 @@ function generateSerif(func, arg) {
         arg: arg,
         startup: startup,
         store: store,
-        __dirname: getCharacterPath(),
 
         inputWindow: inputWindow,
         balloonWindow: balloonWindow,
+        __characterDir: getCharacterPath(),
 
         console,
         require
@@ -364,7 +351,8 @@ function loadReply(func, sandbox, callback) {
 }
 
 function getCharacterPath() {
-    return "./character/" + store.get('character').name;
+    //return "./character/" + store.get('character').name;
+    return process.cwd() + "/character/" + store.get('character').name;
 }
 
 exports.setMainWindowPosition = function(x, y) {
@@ -385,5 +373,4 @@ exports.send = function(txt) {
 };
 
 exports.store = store;
-exports.db = db;
 exports.getCharacterPath = getCharacterPath;

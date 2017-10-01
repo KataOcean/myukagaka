@@ -1,11 +1,10 @@
 exports = function(callback) {
     var rep = "";
 
+    delete require.cache[require.resolve(__characterDir + '/js/common')];
+    var common = require(__characterDir + "/js/common");
 
-    delete require.cache[require.resolve(__dirname + '/js/common')];
-    var common = require(__dirname + "/js/common");
-
-    common.getSerifs(__dirname, "freeTalk", function(data) {
+    common.getSerifs(__characterDir, "freeTalk", function(data) {
         var ary;
         if (arg) {
             ary = data[arg[0]];
