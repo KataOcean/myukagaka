@@ -7,8 +7,8 @@ exports = function(callback) {
     var name = "";
     var branch = "";
 
-    delete require.cache[require.resolve(__dirname + '/js/common')];
-    var common = require(__dirname + "/js/common");
+    delete require.cache[require.resolve(__characterDir + '/js/common')];
+    var common = require(__characterDir + "/js/common");
     var addAndCommit = function() {
         execSync("git add -A");
         execSync("git config --global user.name " + name + "@ちや");
@@ -16,7 +16,7 @@ exports = function(callback) {
         exec("git push origin " + branch, (err, stdout, stderr) => {
             if (err) { console.log(err); }
             execSync("git config --global user.name " + name);
-            common.getSerifs(__dirname, "commitSelf", function(serifs) {
+            common.getSerifs(__characterDir, "commitSelf", function(serifs) {
                 rep = common.getRandomSerif(serifs["end"]);
                 callback(rep);
             });

@@ -1,7 +1,7 @@
 const Datastore = require('nedb');
 var db = {};
 db.income = new Datastore({
-    filename: './db/income.db',
+    filename: __characterDir + '/db/income.db',
     autoload: true,
     timestampData: true
 });

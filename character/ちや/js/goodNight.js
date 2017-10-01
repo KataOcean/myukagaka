@@ -1,26 +1,25 @@
 const Datastore = require('nedb');
 var db = {};
 db.project = new Datastore({
-    filename: './db/project.db',
+    filename: __characterDir + '/db/project.db',
     autoload: true,
     timestampData: true
 });
 db.progress = new Datastore({
-    filename: './db/progress.db',
+    filename: __characterDir + '/db/progress.db',
     autoload: true,
     timestampData: true
 });
 db.payment = new Datastore({
-    filename: './db/payment.db',
+    filename: __characterDir + '/db/payment.db',
     autoload: true,
     timestampData: true
 });
 db.income = new Datastore({
-    filename: './db/income.db',
+    filename: __characterDir + '/db/income.db',
     autoload: true,
     timestampData: true
 });
-var common = require(__dirname + "/js/common");
 
 exports = function(callback) {
 
@@ -32,10 +31,10 @@ exports = function(callback) {
     var sumPayment = 0;
     var sumIncome = 0;
 
-    delete require.cache[require.resolve(__dirname + '/js/common')];
-    common = require(__dirname + "/js/common");
+    delete require.cache[require.resolve(__characterDir + '/js/common')];
+    var common = require(__characterDir + "/js/common");
 
-    common.getSerifs(__dirname, "goodNight", function(serifs) {
+    common.getSerifs(__characterDir, "goodNight", function(serifs) {
         var before = serifs["before"];
         var after = serifs["after"];
         getProgress(function(_projects, _progs) {

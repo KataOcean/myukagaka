@@ -1,12 +1,12 @@
 const Datastore = require('nedb');
 var db = {};
 db.project = new Datastore({
-    filename: './db/project.db',
+    filename: __characterDir + '/db/project.db',
     autoload: true,
     timestampData: true
 });
 db.progress = new Datastore({
-    filename: './db/progress.db',
+    filename: __characterDir + '/db/progress.db',
     autoload: true,
     timestampData: true
 });
