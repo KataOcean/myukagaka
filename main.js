@@ -319,8 +319,6 @@ function call() {
 
 function say(msg) {
     if (canSaying) {
-        if (!balloonWindow) CreateBalloonWindow();
-        balloonWindow.focus();
         balloonWindow.webContents.send('say', msg);
         saying = true;
     }
@@ -378,6 +376,8 @@ exports.setMainWindowPosition = function(x, y) {
 }
 
 exports.send = function(txt) {
+    if (!balloonWindow) CreateBalloonWindow();
+    balloonWindow.focus();
     reply(txt);
     inputWindow.focus();
 };
