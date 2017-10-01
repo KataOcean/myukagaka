@@ -9,7 +9,6 @@ exports = function(callback) {
 
     delete require.cache[require.resolve(__dirname + '/js/common')];
     var common = require(__dirname + "/js/common");
-
     var addAndCommit = function() {
         execSync("git add -A");
         execSync("git config --global user.name " + name + "@ちや");

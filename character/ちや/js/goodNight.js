@@ -36,9 +36,8 @@ exports = function(callback) {
     common = require(__dirname + "/js/common");
 
     common.getSerifs(__dirname, "goodNight", function(serifs) {
-        var json = JSON.parse(serifs);
-        var before = json["before"];
-        var after = json["after"];
+        var before = serifs["before"];
+        var after = serifs["after"];
         getProgress(function(_projects, _progs) {
             projects = _projects;
             progs = _progs;

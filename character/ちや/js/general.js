@@ -6,8 +6,7 @@ exports = function(callback) {
     var common = require(__dirname + "/js/common");
 
     common.getSerifs(__dirname, "general", (data) => {
-        var json = JSON.parse(data);
-        var ary = json[arg[0]];
+        var ary = data[arg[0]];
         rep = common.getRandomSerif(ary);
         callback(rep);
     });
