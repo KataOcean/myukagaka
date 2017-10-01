@@ -276,18 +276,17 @@ function reply(text) {
 
 function generateSerif(func, arg) {
     var data = {
-        db: db,
         user: user,
         arg: arg,
         startup: startup,
         store: store,
-        fs: fs,
         __characterDir: getCharacterPath(),
 
         inputWindow: inputWindow,
         balloonWindow: balloonWindow,
 
-        console: console
+        console,
+        require
 
     }
 

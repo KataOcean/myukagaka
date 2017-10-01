@@ -1,3 +1,16 @@
+const Datastore = require('nedb');
+var db = {};
+db.project = new Datastore({
+    filename: './db/project.db',
+    autoload: true,
+    timestampData: true
+});
+db.progress = new Datastore({
+    filename: './db/progress.db',
+    autoload: true,
+    timestampData: true
+});
+
 exports = function(callback) {
 
     var rep = "";
@@ -12,7 +25,7 @@ exports = function(callback) {
 
     } else {
         var task = { name: arg[0], content: arg[1] };
-        rep = "ふふ、" + task.name + "の" + task.content + "をしたのね。\nそうなんだぁ。えらい、えらい！";
+        rep = "ふふ、" + task.name + arg[2] + task.content + "をしたのね。\nそうなんだぁ。えらい、えらい！";
 
         db.project.findOne({ name: task.name }, (err, doc) => {
             if (!doc) {

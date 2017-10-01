@@ -1,5 +1,8 @@
+var fs = require("fs");
+
 exports = function(callback) {
 
+    console.log("呼んだかしら？");
     var rep = "";
     fs.readFile(__characterDir + "/serifs/freeTalk.json", 'utf8', (err, data) => {
         if (err) return;

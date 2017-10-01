@@ -1,5 +1,5 @@
-/^「(.*)」の「(.*)」をした/ reportProgress 1 2
-/^「(.*)」で「(.*)」をした/ reportProgress 1 2
+/^「(.*)」したからコミットして/ commitSelf 1
+/^「(.*)」(の|で)「(.*)」をした/ reportProgress 1 3 2
 /^「(.*)」をした/ reportProgress 1 
 /^おやすみ(なさい)?$/ goodNight
 /(.*)って呼んで$/ changeNickname 1
