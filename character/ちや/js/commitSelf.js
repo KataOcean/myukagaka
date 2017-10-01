@@ -14,7 +14,11 @@ exports = function(callback) {
     execSync("git config --global user.name " + name + "@ちや");
     execSync("git config --global user.name " + name);
     execSync("git commit -m " + arg[0]);
-    branch = execSync("git branch --contains=HEAD");
+    if (arg[1]) {
+        branch = arg[1];
+    } else {
+        branch = execSync("git branch --contains=HEAD");
+    }
     exec("git push origin " + branch, (err, stdout, stderr) => {
         if (err) { console.log(err); }
         rep = "はい、コミットしておいたわ。\n今日もおつかれさまでした。";
