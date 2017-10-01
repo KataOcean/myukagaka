@@ -1,3 +1,5 @@
+var fs = require("fs");
+
 exports = function(callback) {
 
     var rep = "";
