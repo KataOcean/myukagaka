@@ -1,4 +1,5 @@
 /^「(.*)」したから「(.*)」にコミットして/ commitSelf 1 2
+/^「(.*)」したからにコミットして/ commitSelf 1
 /^「(.*)」(の|で)「(.*)」をした/ reportProgress 1 3 2
 /^「(.*)」をした/ reportProgress 1 
 /^おやすみ(なさい)?$/ goodNight
