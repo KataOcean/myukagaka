@@ -1,7 +1,11 @@
-/^「(.*)」したから「(.*)」にコミットして/ commitSelf 1 2
-/^「(.*)」したからコミットして/ commitSelf 1
+/^「(.*)」した(から|ので)「(.*)」(で|に)コミットして/ commitSelf 1 3
+/^「(.*)」した(から|ので)コミットして/ commitSelf 1
 /^「(.*)」(の|で)「(.*)」をした/ reportProgress 1 3 2
 /^「(.*)」をした/ reportProgress 1 
+/^「(.*)」で「([0-9]*)円」使った/ reportPayment 2 1
+/^「([0-9]*)円」使った/ reportPayment 1 
+/^「(.*)」から「([0-9]*)円」入った/ reportPayment 2 1
+/^「([0-9]*)円」入った/ reportPayment 1 
 /^おやすみ(なさい)?$/ goodNight
 /(.*)って呼んで$/ changeNickname 1
 /^(.*)/ freeTalk 1

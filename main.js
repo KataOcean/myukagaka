@@ -89,7 +89,8 @@ function createWindow() {
         alwaysOnTop: true,
         useContentSize: true,
         x: x,
-        y: y
+        y: y,
+        maximizable: false,
     });
 
     //index.htmlを表示
@@ -294,11 +295,15 @@ function generateSerif(func, arg) {
         func(function(rep, data) {
             console.log(rep);
             if (data) {
-                if (data.isEnd) isEnd = true;
+                if (data.isEnd) {
+                    balloonWindow.setAlwaysOnTop(true);
+                    inputWindow.hide();
+                    isEnd = true;
+                }
                 if (data.user) user = data.user;
             }
             //ここでパースする
-            rep = rep.replace(/<呼び名>/, user.nickname);
+            rep = rep.replace(/<呼び名>/g, user.nickname);
 
             say(rep);
         });
@@ -373,6 +378,8 @@ exports.setMainWindowPosition = function(x, y) {
 }
 
 exports.send = function(txt) {
+    if (!balloonWindow) CreateBalloonWindow();
+    balloonWindow.focus();
     reply(txt);
     inputWindow.focus();
 };

@@ -7,6 +7,6 @@ exports.getRandomSerif = function getRandomSerif(arr) {
 exports.getSerifs = function getSerifs(dir, name, callback) {
     fs.readFile(dir + "/serifs/" + name + ".json", 'utf8', function(err, serifs) {
         if (err) { console.log(err); return; }
-        callback(serifs);
+        callback(JSON.parse(serifs));
     });
 }

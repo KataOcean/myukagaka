@@ -25,7 +25,7 @@ exports = function(callback) {
 
     } else {
         var task = { name: arg[0], content: arg[1] };
-        rep = "ふふ、" + task.name + arg[2] + task.content + "をしたのね。\nそうなんだぁ。えらい、えらい！";
+        rep = "ふふ、" + task.name + arg[2] + "\n" + task.content + "をしたのね。\nいつもお疲れさま！";
 
         db.project.findOne({ name: task.name }, (err, doc) => {
             if (!doc) {
