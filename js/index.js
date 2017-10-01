@@ -1,7 +1,7 @@
 var main = require('electron').remote.require("./main");
 const ipcRenderer = require('electron').ipcRenderer;
 $(function() {
-    loadCharacter(main.getCharacterPath() + "html/default.html");
+    loadCharacter(main.getCharacterPath() + "/html/default.html");
 });
 
 function loadCharacter(path) {

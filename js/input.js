@@ -10,7 +10,7 @@ $(function() {
             prev = "";
             var input = $('#userInput').val();
             $('#userInput').val('');
-            $('#history').text(input);
+            $('#history').text("> " + input);
             main.send(input);
             $('#userInput').focus();
         }
@@ -19,7 +19,7 @@ $(function() {
     $('#userInput').keydown(function(e) {
         if (e.keyCode == 38) {
             var text = $('#history').text();
-            $('#userInput').val(text);
+            $('#userInput').val(text.substr(2));
             $('#userInput').get(0).setSelectionRange(text.length, pos);
         } else if (e.keyCode == 40) {
             $('#userInput').val('');
