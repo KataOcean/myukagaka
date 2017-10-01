@@ -18,7 +18,7 @@ exports = function(callback) {
             if (err) { console.log(err); }
             execSync("git config --global user.name " + name);
             common.getSerifs(__dirname, "commitSelf", function(serifs) {
-                rep = common.getRandomSerif(serifs);
+                rep = common.getRandomSerif(serifs["end"]);
                 callback(rep);
             });
         });
