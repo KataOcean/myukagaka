@@ -17,7 +17,7 @@ exports = function(callback) {
         exec("git push origin " + branch, (err, stdout, stderr) => {
             if (err) { console.log(err); }
             execSync("git config --global user.name " + name);
-            common.getSerifs(__dirname, "commitSerif", function(serifs) {
+            common.getSerifs(__dirname, "commitSelf", function(serifs) {
                 rep = common.getRandomSerif(serifs);
                 callback(rep);
             });
