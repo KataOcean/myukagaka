@@ -1,5 +1,3 @@
-var repPath = "./"
-var branch = "koutei_chan"
 const exec = require('child_process').exec;
 const execSync = require('child_process').execSync;
 
@@ -9,15 +7,20 @@ exports = function(callback) {
     var name = "";
     var branch = "";
 
+    delete require.cache[require.resolve(__dirname + '/js/common')];
+    var common = require(__dirname + "/js/common");
+
     var addAndCommit = function() {
         execSync("git add -A");
         execSync("git config --global user.name " + name + "@ちや");
         execSync("git commit -m " + arg[0]);
         exec("git push origin " + branch, (err, stdout, stderr) => {
             if (err) { console.log(err); }
-            rep = "はい、コミットしておいたわ。\n今回はどんな変更だったのかしら…[wait 30]…[wait 30]？";
             execSync("git config --global user.name " + name);
-            callback(rep);
+            common.getSerifs(__dirname, "commitSerif", function(serifs) {
+                rep = common.getRandomSerif(serifs);
+                callback(rep);
+            });
         });
     }
 

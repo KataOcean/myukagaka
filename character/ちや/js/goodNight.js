@@ -1,4 +1,3 @@
-var fs = require("fs");
 const Datastore = require('nedb');
 var db = {};
 db.project = new Datastore({
@@ -16,14 +15,16 @@ exports = function(callback) {
 
     var rep = "";
 
-    fs.readFile(__characterDir + "serifs/goodNight.json", 'utf8', function(err, serifs) {
-        if (err) return;
+    delete require.cache[require.resolve(__dirname + '/js/common')];
+    var common = require(__dirname + "/js/common");
+
+    common.getSerifs(__dirname, "goodNight", function(serifs) {
         var json = JSON.parse(serifs);
         var before = json["before"];
         var after = json["after"];
         if (db) {
 
-            rep = before[Math.floor(Math.floor(Math.random() * before.length))];;
+            rep += common.getRandomSerif(before);
 
             db.project.find().exec(function(err, projects) {
                 db.progress.find({ createdAt: { $gte: startup } }, { content: 1, projectID: 1 }, function(err, progs) {
@@ -45,7 +46,7 @@ exports = function(callback) {
                     }
 
                     rep += "[wait 1000][clear]";
-                    rep += after[Math.floor(Math.floor(Math.random() * after.length))];;
+                    rep += common.getRandomSerif(after);
                     inputWindow.hide();
                     callback(rep, { isEnd: true });
 

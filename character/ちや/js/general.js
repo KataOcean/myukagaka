@@ -1,13 +1,14 @@
-var fs = require("fs");
-
 exports = function(callback) {
 
     var rep = "";
-    fs.readFile(__characterDir + "/serifs/general.json", 'utf8', (err, data) => {
-        if (err) return;
+
+    delete require.cache[require.resolve(__dirname + '/js/common')];
+    var common = require(__dirname + "/js/common");
+
+    common.getSerifs(__dirname, "general", (data) => {
         var json = JSON.parse(data);
         var ary = json[arg[0]];
-        rep = ary[Math.floor(Math.floor(Math.random() * ary.length))];
+        rep = common.getRandomSerif(ary);
         callback(rep);
     });
 

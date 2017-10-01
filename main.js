@@ -280,7 +280,7 @@ function generateSerif(func, arg) {
         arg: arg,
         startup: startup,
         store: store,
-        __characterDir: getCharacterPath(),
+        __dirname: getCharacterPath(),
 
         inputWindow: inputWindow,
         balloonWindow: balloonWindow,
@@ -327,7 +327,7 @@ function waitInput() {
 }
 
 function readData(callback) {
-    fs.readFile(getCharacterPath() + "parse.txt", "utf8", function(err, data) {
+    fs.readFile(getCharacterPath() + "/parse.txt", "utf8", function(err, data) {
         if (err) return console.log(err);
         var buf = data.split('\r\n');
         var parseRules = [];
@@ -346,7 +346,7 @@ function readData(callback) {
 }
 
 function loadReply(func, sandbox, callback) {
-    var path = getCharacterPath() + "js/" + func + ".js";
+    var path = getCharacterPath() + "/js/" + func + ".js";
     if (!fs.existsSync(path)) {
         return;
     }
@@ -359,7 +359,7 @@ function loadReply(func, sandbox, callback) {
 }
 
 function getCharacterPath() {
-    return "./character/" + store.get('character').name + "/";
+    return "./character/" + store.get('character').name;
 }
 
 exports.setMainWindowPosition = function(x, y) {

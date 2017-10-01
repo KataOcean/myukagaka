@@ -1,11 +1,11 @@
-var fs = require("fs");
-
 exports = function(callback) {
-
-    console.log("呼んだかしら？");
     var rep = "";
-    fs.readFile(__characterDir + "/serifs/freeTalk.json", 'utf8', (err, data) => {
-        if (err) return;
+
+
+    delete require.cache[require.resolve(__dirname + '/js/common')];
+    var common = require(__dirname + "/js/common");
+
+    common.getSerifs(__dirname, "freeTalk", function(data) {
         var json = JSON.parse(data);
         var ary;
         if (arg) {
@@ -15,7 +15,7 @@ exports = function(callback) {
             ary = json["適当返答"];
         }
 
-        rep = ary[Math.floor(Math.floor(Math.random() * ary.length))];
+        rep = common.getRandomSerif(ary);
         callback(rep);
     });
 
