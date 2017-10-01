@@ -20,7 +20,7 @@ exports = function(callback) {
 
     } else {
         var income = { money: arg[0], situation: arg[1] };
-        rep = "へぇ～、" + payment.situation + "で\n" + payment.money + "円、[w 300]使ったのね。\nお金、まだ大丈夫？\n困ったら言ってね？";
+        rep = "ふむふむ、" + payment.situation + "から\n" + payment.money + "円、[w 300]入ってきたのね。\nふふ、よく頑張ったわねぇ。私も嬉しいわ。";
         db.income.insert({
             money: payment.money,
             situation: payment.situation

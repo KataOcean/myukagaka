@@ -319,6 +319,8 @@ function call() {
 
 function say(msg) {
     if (canSaying) {
+        if (!balloonWindow) CreateBalloonWindow();
+        balloonWindow.focus();
         balloonWindow.webContents.send('say', msg);
         saying = true;
     }
