@@ -19,7 +19,7 @@ exports = function(callback) {
         }, (error, response, body) => {
             if (error) console.log(error);
             rep = "うん、分かったわ。\nちゃーんと伝えてくるから、待っててね？";
-            callback(rep);
+            callback({ serif: rep });
         });
     });
 

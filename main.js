@@ -35,7 +35,6 @@ const store = new Store({
                 width: 360,
                 height: 64
             }
-
         },
     },
 });
@@ -52,8 +51,10 @@ let balloonWindow;
 var state = 100;
 
 var saying = false;
-var canSaying = true;
 var isEnd = false;
+var isAwake = false;
+
+var serifQueue = [];
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
@@ -93,7 +94,7 @@ function createWindow() {
     });
 
     mainWindow.on('focus', () => {
-        call();
+        if (isAwake) call();
     });
 
     ['resize', 'move'].forEach(ev => {
@@ -109,12 +110,14 @@ function createWindow() {
     CreateBalloonWindow();
     CreateInputWindow();
     balloonWindow.webContents.on('did-finish-load', () => {
-        generateSerif("general", ["wakeup"]);
+        callGeneral(["wakeup"]);
+        isAwake = true;
     });
     inputWindow.webContents.on('did-finish-load', () => {
         inputWindow.focus();
     });
 }
+
 // アプリの準備が整ったらウィンドウを表示
 app.on('ready', createWindow);
 
@@ -134,9 +137,16 @@ app.on('activate', () => {
 ipcMain.on('said', (event) => {
     // レンダラープロセスへ返信
     event.sender.send('reply');
+
     saying = false;
     if (isEnd) {
         mainWindow.close();
+    } else {
+
+        if (serifQueue.length > 0) {
+            say(serifQueue.shift());
+        }
+
     }
 });
 
@@ -235,7 +245,7 @@ function reply(text) {
 
     replying = true;
 
-    readData((rules) => {
+    loadParse((rules) => {
 
         var obj = {};
         var arg;
@@ -256,61 +266,44 @@ function reply(text) {
 
         if (!obj.func) obj.func = "freeTalk";
 
-        generateSerif(obj.func, obj.arg);
-
-    });
-
-}
-
-function generateSerif(func, arg) {
-    var data = {
-        user: user,
-        arg: arg,
-        startup: startup,
-        store: store,
-
-        inputWindow: inputWindow,
-        balloonWindow: balloonWindow,
-        __characterDir: getCharacterPath(),
-
-        console,
-        require
-
-    }
-
-    loadReply(func, data, (func) => {
-        func(function(rep, data) {
-            console.log(rep);
-            if (data) {
-                if (data.isEnd) {
-                    balloonWindow.setAlwaysOnTop(true);
-                    inputWindow.hide();
-                    isEnd = true;
-                }
-                if (data.user) user = data.user;
-            }
-            //ここでパースする
-            rep = rep.replace(/<呼び名>/g, user.nickname);
-
-            say(rep);
+        runScript(obj.func, obj.arg, (data) => {
+            addSay(data);
         });
     });
 }
 
-function call() {
-    if (!saying) {
-        generateSerif("general", ["call"]);
+function parseSerif(data) {
+
+    if (!data) return "";
+
+    var buf = data.serif;
+    console.log(data.serif);
+    if (data.isEnd) {
+        balloonWindow.setAlwaysOnTop(true);
+        inputWindow.hide();
+        isEnd = true;
     }
+    if (data.user) user = data.user;
+    //ここでパースする
+    buf = buf.replace(/<呼び名>/g, user.nickname);
+
+    return buf;
+
+}
+
+function call() {
+    callGeneral(["call"]);
     waitInput();
 }
 
-function say(msg) {
-    if (canSaying) {
-        if (!balloonWindow) CreateBalloonWindow();
-        balloonWindow.focus();
-        balloonWindow.webContents.send('say', msg);
-        saying = true;
-    }
+function say(data) {
+
+    var msg = parseSerif(data);
+    if (!balloonWindow) CreateBalloonWindow();
+    balloonWindow.focus();
+    balloonWindow.webContents.send('say', msg);
+    saying = true;
+
 }
 
 function waitInput() {
@@ -318,7 +311,7 @@ function waitInput() {
     inputWindow.focus();
 }
 
-function readData(callback) {
+function loadParse(callback) {
     fs.readFile(getCharacterPath() + "/parse.txt", "utf8", function(err, data) {
         if (err) return console.log(err);
         var buf = data.split('\r\n');
@@ -331,27 +324,54 @@ function readData(callback) {
                 arg: rule.slice(2),
             });
         }
-
         callback(parseRules);
     });
-
 }
 
-function loadReply(func, sandbox, callback) {
+function runScript(func, arg, callback) {
     var path = getCharacterPath() + "/js/" + func + ".js";
     if (!fs.existsSync(path)) {
         return;
     }
+
+    var sandbox = {
+        user: user,
+        arg: arg,
+        startup: startup,
+        store: store,
+
+        inputWindow: inputWindow,
+        balloonWindow: balloonWindow,
+        __characterDir: getCharacterPath(),
+
+        console,
+        require
+    }
+
     fs.readFile(path, function(err, data) {
         var script = vm.createScript(data, path);
         script.runInNewContext(sandbox);
-        obj = sandbox.exports;
-        callback(sandbox.exports);
+        sandbox.exports(callback);
     });
 }
 
+function addSay(data) {
+    if (saying) {
+        serifQueue.push(data);
+    } else {
+        say(data);
+    }
+}
+
+function callGeneral(arg) {
+
+    runScript("general", arg, (data) => {
+        addSay(data);
+    });
+
+}
+
 function getCharacterPath() {
-    //return "./character/" + store.get('character').name;
     return process.cwd() + "/character/" + store.get('character').name;
 }
 

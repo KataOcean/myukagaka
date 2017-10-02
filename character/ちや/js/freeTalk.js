@@ -14,7 +14,7 @@ exports = function(callback) {
         }
 
         rep = common.getRandomSerif(ary);
-        callback(rep);
+        callback({ serif: rep });
     });
 
 }

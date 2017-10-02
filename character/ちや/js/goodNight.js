@@ -47,7 +47,7 @@ exports = function(callback) {
                     rep = common.getRandomSerif(before);
                     rep += generateReply(projects, progs, sumPayment, sumIncome);
                     rep += common.getRandomSerif(after);
-                    callback(rep, { isEnd: true });
+                    callback({ serif: rep, isEnd: true });
                 });
             });
         });
