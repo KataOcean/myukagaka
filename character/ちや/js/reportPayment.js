@@ -16,7 +16,7 @@ exports = function(callback) {
         db.payment.insert({
             money: money,
         });
-        callback(rep);
+        callback({ serif: rep });
 
     } else {
         var payment = { money: arg[0], situation: arg[1] };
@@ -25,7 +25,7 @@ exports = function(callback) {
             money: payment.money,
             situation: payment.situation
         });
-        callback(rep);
+        callback({ serif: rep });
     }
 
 }

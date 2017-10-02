@@ -11,6 +11,6 @@ exports = function(callback) {
         }
     });
 
-    callback(rep, { user: store.get('user') });
+    callback({ serif: rep, user: store.get('user') });
 
 }

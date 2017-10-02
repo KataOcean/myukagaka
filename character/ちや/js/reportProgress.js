@@ -13,19 +13,21 @@ db.progress = new Datastore({
 
 exports = function(callback) {
 
-    var rep = "";
+    var data = {
+        serif: ""
+    };
 
     if (arg.length == 1) {
         var task = { content: arg[0] };
-        rep = "ふふ、" + task.content + "をしたのね。\nそうなんだぁ。えらい、えらい！";
+        data.serif = "ふふ、" + task.content + "をしたのね。\nそうなんだぁ。えらい、えらい！";
         db.progress.insert({
             content: task.content,
         });
-        callback(rep);
+        callback(data);
 
     } else {
         var task = { name: arg[0], content: arg[1] };
-        rep = "ふふ、" + task.name + arg[2] + "\n" + task.content + "をしたのね。\nいつもお疲れさま！";
+        data.serif = "ふふ、" + task.name + arg[2] + "\n" + task.content + "をしたのね。\nいつもお疲れさま！";
 
         db.project.findOne({ name: task.name }, (err, doc) => {
             if (!doc) {
@@ -36,14 +38,14 @@ exports = function(callback) {
                         content: task.content,
                         projectID: newDoc._id,
                     });
-                    callback(rep);
+                    callback(data);
                 });
             } else {
                 db.progress.insert({
                     content: task.content,
                     projectID: doc._id,
                 });
-                callback(rep);
+                callback(data);
             }
         });
     }
