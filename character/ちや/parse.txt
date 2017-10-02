@@ -8,5 +8,7 @@
 /^「(.*)」から「([0-9]*)円」入った/ reportPayment 2 1
 /^「([0-9]*)円」入った/ reportPayment 1 
 /^おやすみ(なさい)?$/ goodNight
+/^(いってきます)$/ close 1
+/^(一回切るね)$/ close 1
 /(.*)って呼んで$/ changeNickname 1
 /^(.*)/ freeTalk 1
