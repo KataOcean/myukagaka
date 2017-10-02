@@ -111,7 +111,6 @@ function createWindow() {
     CreateInputWindow();
     balloonWindow.webContents.on('did-finish-load', () => {
         callGeneral(["wakeup"]);
-        isAwake = true;
     });
     inputWindow.webContents.on('did-finish-load', () => {
         inputWindow.focus();
@@ -139,6 +138,12 @@ ipcMain.on('said', (event) => {
     event.sender.send('reply');
 
     saying = false;
+
+    balloonWindow.setAlwaysOnTop(false);
+    if (!isAwake) {
+        isAwake = true;
+    }
+
     if (isEnd) {
         mainWindow.close();
     } else {
@@ -216,7 +221,7 @@ function CreateBalloonWindow() {
         width: bounds.width,
         height: bounds.height,
         resizable: true,
-        alwaysOnTop: false,
+        alwaysOnTop: true,
         x: bounds.x ? bounds.x : mb.x - bounds.width,
         y: bounds.y ? bounds.y : mb.y,
         useContentSize: true,
@@ -279,7 +284,6 @@ function parseSerif(data) {
     var buf = data.serif;
     console.log(data.serif);
     if (data.isEnd) {
-        balloonWindow.setAlwaysOnTop(true);
         inputWindow.hide();
         isEnd = true;
     }
@@ -300,6 +304,7 @@ function say(data) {
 
     var msg = parseSerif(data);
     if (!balloonWindow) CreateBalloonWindow();
+    balloonWindow.setAlwaysOnTop(true);
     balloonWindow.focus();
     balloonWindow.webContents.send('say', msg);
     saying = true;

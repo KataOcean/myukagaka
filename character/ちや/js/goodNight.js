@@ -21,6 +21,9 @@ db.income = new Datastore({
     timestampData: true
 });
 
+var date = new Date();
+date.setHours(0, 0, 0, 0);
+
 exports = function(callback) {
 
     var rep = "";
@@ -30,6 +33,7 @@ exports = function(callback) {
 
     var sumPayment = 0;
     var sumIncome = 0;
+
 
     delete require.cache[require.resolve(__characterDir + '/js/common')];
     var common = require(__characterDir + "/js/common");
@@ -57,7 +61,7 @@ exports = function(callback) {
 
 function getProgress(callback) {
     db.project.find().exec(function(err, projects) {
-        db.progress.find({ createdAt: { $gte: startup } }, { content: 1, projectID: 1 }, function(err, progs) {
+        db.progress.find({ createdAt: { $gte: date } }, { content: 1, projectID: 1 }, function(err, progs) {
             callback(projects, progs);
         });
     });
@@ -66,7 +70,7 @@ function getProgress(callback) {
 function getPayment(callback) {
     var sum = 0;
 
-    db.payment.find({ createdAt: { $gte: startup } }, { money: 1, }, function(err, pays) {
+    db.payment.find({ createdAt: { $gte: date } }, { money: 1, }, function(err, pays) {
         if (pays.length > 0) {
             for (let i in pays) {
                 sum += pays[i].money;
@@ -78,7 +82,7 @@ function getPayment(callback) {
 
 function getIncome(callback) {
     var sum = 0;
-    db.income.find({ createdAt: { $gte: startup } }, { money: 1, }, function(err, pays) {
+    db.income.find({ createdAt: { $gte: date } }, { money: 1, }, function(err, pays) {
         if (pays.length > 0) {
             for (let i in pays) {
                 sum += pays[i].money;

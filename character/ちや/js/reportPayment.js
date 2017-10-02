@@ -20,7 +20,7 @@ exports = function(callback) {
 
     } else {
         var payment = { money: arg[0], situation: arg[1] };
-        rep = "へぇ～、" + payment.situation + "で\n" + payment.money + "円、[w 300]使ったのね。\nお金、まだ大丈夫？困ったら、いつでも言ってね？";
+        rep = "へぇ～、" + payment.situation + "で\n" + payment.money + "円、[w 300]使ったのね。\nお金、まだ大丈夫？\n[w 300]あんまり使いすぎたらダメだからね？";
         db.payment.insert({
             money: payment.money,
             situation: payment.situation
