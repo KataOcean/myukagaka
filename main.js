@@ -7,8 +7,9 @@ const ipcMain = electron.ipcMain;
 const date = new Date();
 const startup = new Date(date.getTime());
 const vm = require('vm');
-
-var fs = require('fs');
+const path = require("path");
+const fs = require('fs');
+const CronJob = require('cron').CronJob;
 
 const store = new Store({
     defaults: {
@@ -55,6 +56,8 @@ var isEnd = false;
 var isAwake = false;
 
 var serifQueue = [];
+var functions = {};
+var crons = {};
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
@@ -79,6 +82,7 @@ function createWindow() {
         x: x,
         y: y,
         maximizable: false,
+        'node-integration': false
     });
 
     //index.htmlを表示
@@ -106,7 +110,8 @@ function createWindow() {
     });
 
     mainWindow.webContents.on('did-finish-load', () => {});
-
+    initScript();
+    initCron();
     CreateBalloonWindow();
     CreateInputWindow();
     balloonWindow.webContents.on('did-finish-load', () => {
@@ -195,7 +200,8 @@ function CreateInputWindow() {
         y: bounds.y ? bounds.y : mb.y + mb.height - bounds.height,
         useContentSize: true,
         show: true,
-        skipTaskbar: true
+        skipTaskbar: true,
+        'node-integration': false
     });
     inputWindow.loadURL(`file://${__dirname}/input.html`)
     inputWindow.on('closed', () => { // ()は　function ()と書いていい
@@ -226,7 +232,8 @@ function CreateBalloonWindow() {
         y: bounds.y ? bounds.y : mb.y,
         useContentSize: true,
         show: true,
-        skipTaskbar: true
+        skipTaskbar: true,
+        'node-integration': false
     });
     balloonWindow.loadURL(`file://${__dirname}/balloon.html`)
 
@@ -282,14 +289,16 @@ function parseSerif(data) {
     if (!data) return "";
 
     var buf = data.serif;
-    console.log(data.serif);
     if (data.isEnd) {
         inputWindow.hide();
         isEnd = true;
     }
     if (data.user) user = data.user;
+
     //ここでパースする
-    buf = buf.replace(/<呼び名>/g, user.nickname);
+    if (buf) {
+        buf = buf.replace(/<呼び名>/g, user.nickname);
+    }
 
     return buf;
 
@@ -333,53 +342,133 @@ function loadParse(callback) {
     });
 }
 
-function runScript(func, arg, callback) {
-    var path = getCharacterPath() + "/js/" + func + ".js";
-    if (!fs.existsSync(path)) {
-        return;
-    }
-
-    var sandbox = {
-        user: user,
-        arg: arg,
-        startup: startup,
-        store: store,
-
-        inputWindow: inputWindow,
-        balloonWindow: balloonWindow,
-        __characterDir: getCharacterPath(),
-
-        console,
-        require
-    }
-
-    fs.readFile(path, function(err, data) {
-        var script = vm.createScript(data, path);
-        script.runInNewContext(sandbox);
-        sandbox.exports(callback);
-    });
-}
-
 function addSay(data) {
+    console.log(data.serif);
     if (saying) {
-        serifQueue.push(data);
+        if (!data.dontQue) serifQueue.push(data);
     } else {
         say(data);
     }
 }
 
 function callGeneral(arg) {
-
     runScript("general", arg, (data) => {
         addSay(data);
     });
-
 }
 
 function getCharacterPath() {
     return process.cwd() + "/character/" + store.get('character').name;
 }
 
+//functions------------------------------------------------------------------
+
+const chokidar = require("chokidar");
+var scriptWatcher = chokidar.watch(getScriptPath(), {
+    ignored: /[\/\\]\./,
+    persistent: true
+});
+
+function initScript() {
+    var p = getScriptPath();
+    fs.readdir(p, function(err, files) {
+        if (err) throw err;
+        var fileList = [];
+        files.map(function(file) {
+            return path.join(p, file);
+        }).filter(function(file) {
+            return fs.statSync(file).isFile() && /.*\.js$/.test(file); //絞り込み
+        }).forEach(function(file) {
+            createScript(file);
+        });
+    });
+
+    scriptWatcher.on("add", (path) => {
+        createScript(path);
+    });
+    scriptWatcher.on("change", (path) => {
+        createScript(path);
+    });
+    scriptWatcher.on("remove", (path) => {
+        removeScript(path);
+    });
+}
+
+function createScript(filepath) {
+    var funcname = path.basename(filepath, ".js");
+    if (!fs.existsSync(filepath)) {
+        return;
+    }
+    fs.readFile(filepath, function(err, file) {
+        var script = vm.createScript(file, path);
+
+        var sandbox = {
+            user: user,
+            startup: startup,
+            store: store,
+
+            inputWindow: inputWindow,
+            balloonWindow: balloonWindow,
+            __characterDir: getCharacterPath(),
+
+            console,
+            require
+        }
+        script.runInNewContext(sandbox);
+        functions[funcname] = sandbox;
+    });
+}
+
+function removeScript(filepath) {
+    var funcname = path.basename(filepath, ".js");
+    functions[funcname] = null;
+}
+
+function runScript(func, arg, callback) {
+    if (!functions[func]) return;
+    functions[func].exports(arg, callback);
+}
+
+function getScriptPath() {
+    return path.join(getCharacterPath(), "functions");
+}
+
+//crons------------------------------------------------------------------
+function initCron() {
+    var cronPath = path.join(getCharacterPath(), "cron");
+    fs.exists(cronPath, (exists) => {
+        if (exists) {
+            createCron();
+            fs.watch(cronPath, 'utf8', (event, filename) => {
+                createCron();
+            });
+        }
+    });
+}
+
+function createCron() {
+    var cronPath = path.join(getCharacterPath(), "cron");
+    fs.readFile(cronPath, 'utf8', (err, data) => {
+        var buf = data.split('\r\n');
+        for (var i in buf) {
+            if (!buf[i]) continue;
+            var cronText = buf[i].trim().match(/(([0-9\/\*]*\s){6})(.*)/);
+            if (cronText) {
+                try {
+                    if (crons[i]) crons[i].stop();
+                    crons[i] = new CronJob(cronText[1].trim(), () => {
+                        runScript(cronText[3], [], (data) => {
+                            if (isAwake) addSay(data);
+                        });
+                    }, null, true);
+                } catch (ex) {
+                    console.log(ex);
+                }
+            }
+        }
+    });
+}
+//exports----------------------------------------------------------------
 exports.setMainWindowPosition = function(x, y) {
     mainWindow.setPosition(x, y);
     store.set({
