@@ -9,6 +9,7 @@ const startup = new Date(date.getTime());
 const vm = require('vm');
 const path = require("path");
 const fs = require('fs');
+const CronJob = require('cron').CronJob;
 
 const store = new Store({
     defaults: {
@@ -55,7 +56,8 @@ var isEnd = false;
 var isAwake = false;
 
 var serifQueue = [];
-var scripts = {};
+var functions = {};
+var crons = {};
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
@@ -107,9 +109,9 @@ function createWindow() {
         })
     });
 
-    mainWindow.webContents.on('did-finish-load', () => {
-        initScript();
-    });
+    mainWindow.webContents.on('did-finish-load', () => {});
+    initScript();
+    initCron();
     CreateBalloonWindow();
     CreateInputWindow();
     balloonWindow.webContents.on('did-finish-load', () => {
@@ -287,14 +289,16 @@ function parseSerif(data) {
     if (!data) return "";
 
     var buf = data.serif;
-    console.log(data.serif);
     if (data.isEnd) {
         inputWindow.hide();
         isEnd = true;
     }
     if (data.user) user = data.user;
+
     //ここでパースする
-    buf = buf.replace(/<呼び名>/g, user.nickname);
+    if (buf) {
+        buf = buf.replace(/<呼び名>/g, user.nickname);
+    }
 
     return buf;
 
@@ -338,9 +342,8 @@ function loadParse(callback) {
     });
 }
 
-
-
 function addSay(data) {
+    console.log(data.serif);
     if (saying) {
         serifQueue.push(data);
     } else {
@@ -349,18 +352,16 @@ function addSay(data) {
 }
 
 function callGeneral(arg) {
-
     runScript("general", arg, (data) => {
         addSay(data);
     });
-
 }
 
 function getCharacterPath() {
     return process.cwd() + "/character/" + store.get('character').name;
 }
 
-//scripts------------------------------------------------------------------
+//functions------------------------------------------------------------------
 
 const chokidar = require("chokidar");
 var scriptWatcher = chokidar.watch(getScriptPath(), {
@@ -391,7 +392,6 @@ function initScript() {
     scriptWatcher.on("remove", (path) => {
         removeScript(path);
     });
-
 }
 
 function createScript(filepath) {
@@ -415,25 +415,59 @@ function createScript(filepath) {
             require
         }
         script.runInNewContext(sandbox);
-        scripts[funcname] = sandbox;
+        functions[funcname] = sandbox;
     });
 }
 
 function removeScript(filepath) {
     var funcname = path.basename(filepath, ".js");
-    scripts[funcname] = null;
+    functions[funcname] = null;
 }
 
 function runScript(func, arg, callback) {
-
-    if (!scripts[func]) return;
-    scripts[func].exports(arg, callback);
+    if (!functions[func]) return;
+    functions[func].exports(arg, callback);
 }
 
 function getScriptPath() {
-    return path.join(getCharacterPath(), "scripts");
+    return path.join(getCharacterPath(), "functions");
 }
 
+//crons------------------------------------------------------------------
+function initCron() {
+    var cronPath = path.join(getCharacterPath(), "cron");
+    fs.exists(cronPath, (exists) => {
+        if (exists) {
+            createCron();
+            fs.watch(cronPath, 'utf8', (event, filename) => {
+                createCron();
+            });
+        }
+    });
+}
+
+function createCron() {
+    var cronPath = path.join(getCharacterPath(), "cron");
+    fs.readFile(cronPath, 'utf8', (err, data) => {
+        var buf = data.split('\r\n');
+        for (var i in buf) {
+            if (!buf[i]) continue;
+            var cronText = buf[i].trim().match(/(([0-9\/\*]*\s){6})(.*)/);
+            if (cronText) {
+                try {
+                    if (crons[i]) crons[i].stop();
+                    crons[i] = new CronJob(cronText[1].trim(), () => {
+                        runScript(cronText[3], [], (data) => {
+                            if (isAwake) addSay(data);
+                        });
+                    }, null, true);
+                } catch (ex) {
+                    console.log(ex);
+                }
+            }
+        }
+    });
+}
 //exports----------------------------------------------------------------
 exports.setMainWindowPosition = function(x, y) {
     mainWindow.setPosition(x, y);
