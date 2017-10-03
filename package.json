@@ -9,6 +9,7 @@
     "author": "kata",
     "license": "MIT",
     "dependencies": {
+        "chokidar": "^1.7.0",
         "electron": "^1.7.5",
         "electron-config": "^1.0.0",
         "electron-store": "^1.2.0",

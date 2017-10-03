@@ -1,14 +1,17 @@
 const Datastore = require('nedb');
 var db = {};
-db.income = new Datastore({
-    filename: __characterDir + '/db/income.db',
-    autoload: true,
-    timestampData: true
-});
 
-exports = function(callback) {
+exports = function(arg, callback) {
 
     var rep = "";
+
+    if (!db.income) {
+        db.income = new Datastore({
+            filename: __characterDir + '/db/income.db',
+            autoload: true,
+            timestampData: true
+        });
+    }
 
     if (arg.length == 1) {
         var money = arg[0];
@@ -27,5 +30,4 @@ exports = function(callback) {
         });
         callback({ serif: rep });
     }
-
 }

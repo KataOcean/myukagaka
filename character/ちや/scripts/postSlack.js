@@ -1,9 +1,9 @@
-exports = function(callback) {
+exports = function(arg, callback) {
 
     var rep = "";
 
-    delete require.cache[require.resolve(__characterDir + '/js/common')];
-    var common = require(__characterDir + "/js/common");
+    delete require.cache[require.resolve(__characterDir + '/module/common')];
+    var common = require(__characterDir + "/module/common");
 
     var request = require("request");
 

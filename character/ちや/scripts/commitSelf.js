@@ -1,14 +1,15 @@
 const exec = require('child_process').exec;
 const execSync = require('child_process').execSync;
 
-exports = function(callback) {
+exports = function(arg, callback) {
 
     var rep = "";
     var name = "";
     var branch = "";
 
-    delete require.cache[require.resolve(__characterDir + '/js/common')];
-    var common = require(__characterDir + "/js/common");
+    delete require.cache[require.resolve(__characterDir + '/module/common')];
+    var common = require(__characterDir + "/module/common");
+
     var addAndCommit = function() {
         execSync("git add -A");
         execSync("git config --global user.name " + name + "@ちや");

@@ -7,8 +7,8 @@ const ipcMain = electron.ipcMain;
 const date = new Date();
 const startup = new Date(date.getTime());
 const vm = require('vm');
-
-var fs = require('fs');
+const path = require("path");
+const fs = require('fs');
 
 const store = new Store({
     defaults: {
@@ -55,6 +55,7 @@ var isEnd = false;
 var isAwake = false;
 
 var serifQueue = [];
+var scripts = {};
 
 function createWindow() {
     var nativeImage = electron.nativeImage;
@@ -79,6 +80,7 @@ function createWindow() {
         x: x,
         y: y,
         maximizable: false,
+        'node-integration': false
     });
 
     //index.htmlを表示
@@ -105,8 +107,9 @@ function createWindow() {
         })
     });
 
-    mainWindow.webContents.on('did-finish-load', () => {});
-
+    mainWindow.webContents.on('did-finish-load', () => {
+        initScript();
+    });
     CreateBalloonWindow();
     CreateInputWindow();
     balloonWindow.webContents.on('did-finish-load', () => {
@@ -195,7 +198,8 @@ function CreateInputWindow() {
         y: bounds.y ? bounds.y : mb.y + mb.height - bounds.height,
         useContentSize: true,
         show: true,
-        skipTaskbar: true
+        skipTaskbar: true,
+        'node-integration': false
     });
     inputWindow.loadURL(`file://${__dirname}/input.html`)
     inputWindow.on('closed', () => { // ()は　function ()と書いていい
@@ -226,7 +230,8 @@ function CreateBalloonWindow() {
         y: bounds.y ? bounds.y : mb.y,
         useContentSize: true,
         show: true,
-        skipTaskbar: true
+        skipTaskbar: true,
+        'node-integration': false
     });
     balloonWindow.loadURL(`file://${__dirname}/balloon.html`)
 
@@ -333,32 +338,7 @@ function loadParse(callback) {
     });
 }
 
-function runScript(func, arg, callback) {
-    var path = getCharacterPath() + "/js/" + func + ".js";
-    if (!fs.existsSync(path)) {
-        return;
-    }
 
-    var sandbox = {
-        user: user,
-        arg: arg,
-        startup: startup,
-        store: store,
-
-        inputWindow: inputWindow,
-        balloonWindow: balloonWindow,
-        __characterDir: getCharacterPath(),
-
-        console,
-        require
-    }
-
-    fs.readFile(path, function(err, data) {
-        var script = vm.createScript(data, path);
-        script.runInNewContext(sandbox);
-        sandbox.exports(callback);
-    });
-}
 
 function addSay(data) {
     if (saying) {
@@ -380,6 +360,81 @@ function getCharacterPath() {
     return process.cwd() + "/character/" + store.get('character').name;
 }
 
+//scripts------------------------------------------------------------------
+
+const chokidar = require("chokidar");
+var scriptWatcher = chokidar.watch(getScriptPath(), {
+    ignored: /[\/\\]\./,
+    persistent: true
+});
+
+function initScript() {
+    var p = getScriptPath();
+    fs.readdir(p, function(err, files) {
+        if (err) throw err;
+        var fileList = [];
+        files.map(function(file) {
+            return path.join(p, file);
+        }).filter(function(file) {
+            return fs.statSync(file).isFile() && /.*\.js$/.test(file); //絞り込み
+        }).forEach(function(file) {
+            createScript(file);
+        });
+    });
+
+    scriptWatcher.on("add", (path) => {
+        createScript(path);
+    });
+    scriptWatcher.on("change", (path) => {
+        createScript(path);
+    });
+    scriptWatcher.on("remove", (path) => {
+        removeScript(path);
+    });
+
+}
+
+function createScript(filepath) {
+    var funcname = path.basename(filepath, ".js");
+    if (!fs.existsSync(filepath)) {
+        return;
+    }
+    fs.readFile(filepath, function(err, file) {
+        var script = vm.createScript(file, path);
+
+        var sandbox = {
+            user: user,
+            startup: startup,
+            store: store,
+
+            inputWindow: inputWindow,
+            balloonWindow: balloonWindow,
+            __characterDir: getCharacterPath(),
+
+            console,
+            require
+        }
+        script.runInNewContext(sandbox);
+        scripts[funcname] = sandbox;
+    });
+}
+
+function removeScript(filepath) {
+    var funcname = path.basename(filepath, ".js");
+    scripts[funcname] = null;
+}
+
+function runScript(func, arg, callback) {
+
+    if (!scripts[func]) return;
+    scripts[func].exports(arg, callback);
+}
+
+function getScriptPath() {
+    return path.join(getCharacterPath(), "scripts");
+}
+
+//exports----------------------------------------------------------------
 exports.setMainWindowPosition = function(x, y) {
     mainWindow.setPosition(x, y);
     store.set({
