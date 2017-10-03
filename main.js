@@ -345,7 +345,7 @@ function loadParse(callback) {
 function addSay(data) {
     console.log(data.serif);
     if (saying) {
-        serifQueue.push(data);
+        if (!data.dontQue) serifQueue.push(data);
     } else {
         say(data);
     }
