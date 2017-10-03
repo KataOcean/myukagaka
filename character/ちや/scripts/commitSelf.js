@@ -39,7 +39,7 @@ exports = function(arg, callback) {
             addAndCommit();
         }
     } catch (ex) {
-        rep = "あら？エラーが出たみたいよ？\n" + e + "\nですって。";
+        rep = "あら？エラーが出たみたいよ？\n" + ex + "\nですって。";
         callback(rep);
     }
 }
