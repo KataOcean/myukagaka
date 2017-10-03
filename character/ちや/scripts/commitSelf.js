@@ -12,34 +12,38 @@ exports = function(arg, callback) {
 
     callback({ serif: "分かったわ。ちょっと、待っててね……。" });
 
-    try {
-        var addAndCommit = function() {
-            execSync("git add -A");
-            execSync("git config --global user.name " + name + "@ちや");
-            execSync("git commit -m " + arg[0]);
-            exec("git push origin " + branch, (err, stdout, stderr) => {
-                if (err) { console.log(err); }
-                execSync("git config --global user.name " + name);
-                common.getSerifs(__characterDir, "commitSelf", function(serifs) {
-                    rep = common.getRandomSerif(serifs["end"]);
-                    callback({ serif: rep });
-                });
-            });
+    var addAndCommit = function() {
+        try {
+
+            throw "aaa";
+            return;
+        } catch (ex) {
+            rep = "あら？エラーが出たみたいよ？\n" + ex + "\nですって。";
+            callback(rep);
         }
 
-        name = execSync("git config --global user.name");
-        if (arg[1]) {
-            branch = arg[1];
-            exec("git checkout -b " + branch, (err, stdout, stderr) => {
-                if (stderr) execSync("git checkout " + branch);
-                addAndCommit();
+        execSync("git add -A");
+        execSync("git config --global user.name " + name + "@ちや");
+        execSync("git commit -m " + arg[0]);
+        exec("git push origin " + branch, (err, stdout, stderr) => {
+            if (err) { console.log(err); }
+            execSync("git config --global user.name " + name);
+            common.getSerifs(__characterDir, "commitSelf", function(serifs) {
+                rep = common.getRandomSerif(serifs["end"]);
+                callback({ serif: rep });
             });
-        } else {
-            branch = execSync("git branch --contains=HEAD");
+        });
+    }
+
+    name = execSync("git config --global user.name");
+    if (arg[1]) {
+        branch = arg[1];
+        exec("git checkout -b " + branch, (err, stdout, stderr) => {
+            if (stderr) execSync("git checkout " + branch);
             addAndCommit();
-        }
-    } catch (ex) {
-        rep = "あら？エラーが出たみたいよ？\n" + ex + "\nですって。";
-        callback(rep);
+        });
+    } else {
+        branch = execSync("git branch --contains=HEAD");
+        addAndCommit();
     }
 }
