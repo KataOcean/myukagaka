@@ -24,16 +24,22 @@ exports = function(arg, callback) {
         });
     }
 
-    name = execSync("git config --global user.name");
-    if (arg[1]) {
-        branch = arg[1];
-        exec("git checkout -b " + branch, (err, stdout, stderr) => {
-            if (stderr) execSync("git checkout " + branch);
-            addAndCommit();
-        });
-    } else {
-        branch = execSync("git branch --contains=HEAD");
-        addAndCommit();
-    }
+    callback({ serif: "はいは～い。ちょっと待ってね……。" });
 
+    try {
+        name = execSync("git config --global user.name");
+        if (arg[1]) {
+            branch = arg[1];
+            exec("git checkout -b " + branch, (err, stdout, stderr) => {
+                if (stderr) execSync("git checkout " + branch);
+                addAndCommit();
+            });
+        } else {
+            branch = execSync("git branch --contains=HEAD");
+            addAndCommit();
+        }
+    } catch (ex) {
+        rep = "あら？エラーが出たみたいよ？\n" + e + "\nですって。";
+        callback(rep);
+    }
 }
