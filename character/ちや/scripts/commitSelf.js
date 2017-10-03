@@ -28,7 +28,7 @@ exports = function(arg, callback) {
             });
 
         } catch (ex) {
-            rep = "あら？エラーが出たみたいよ？\n" + ex + "\nですって。";
+            rep = "あら？エラーが出たみたいよ？\n" + ex.name + "\n" + ex.message + "\nですって。";
             callback({ serif: rep });
         }
 
